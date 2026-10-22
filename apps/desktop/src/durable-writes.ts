@@ -31,16 +31,36 @@ export async function syncDirectory(dir: string): Promise<void> {
   }
 }
 
+/** Build the finite parent walk before doing I/O. mkdir may return an
+ * equivalent path with different separators or drive-letter casing.
+ */
+export function directoryParentsToSync(
+  dir: string,
+  firstCreated: string,
+  pathApi: Pick<typeof path, 'resolve' | 'dirname' | 'relative'> = path,
+): string[] {
+  const first = pathApi.resolve(firstCreated);
+  const parents: string[] = [];
+  for (let current = pathApi.resolve(dir); ; ) {
+    const parent = pathApi.dirname(current);
+    parents.push(parent);
+    if (pathApi.relative(first, current) === '') return parents;
+    // Fail instead of repeatedly syncing the root if mkdir ever returns
+    // a path outside this ancestry (including another Windows volume).
+    if (pathApi.relative(current, parent) === '') {
+      throw new Error('Created directory is not an ancestor of the destination.');
+    }
+    current = parent;
+  }
+}
+
 export async function makeDurableDirectory(dir: string): Promise<void> {
   const absolute = path.resolve(dir);
   const firstCreated = await fs.mkdir(absolute, { recursive: true });
   if (!firstCreated) return;
   // Each newly created directory is an entry in its parent. Flush from
   // deepest to shallowest so recursively created destination folders persist.
-  for (let current = absolute; ; current = path.dirname(current)) {
-    await syncDirectory(path.dirname(current));
-    if (current === firstCreated) break;
-  }
+  for (const parent of directoryParentsToSync(absolute, firstCreated)) await syncDirectory(parent);
 }
 
 /** Return an exclusively created, fully written and synced sibling stage. */

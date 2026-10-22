@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { makeDurableDirectory, replaceDurably, syncDirectory } from '../../apps/desktop/src/durable-writes.js';
+import { directoryParentsToSync, makeDurableDirectory, replaceDurably, syncDirectory } from '../../apps/desktop/src/durable-writes.js';
 import { resetDocWritesForTests, saveNewDoc } from '../../apps/desktop/src/doc-writes.js';
 
 let dir: string;
@@ -139,6 +139,38 @@ describe('durable replacements (document and recovery-journal disk layer)', () =
     opened.length = 0;
     await makeDurableDirectory(path.join(dir, 'new', 'deeper'));
     expect(opened).toEqual([]);
+  });
+
+  it('finishes the real parent sync when mkdir returns an equivalent normalized path', async () => {
+    const realMkdir = fs.mkdir;
+    vi.spyOn(fs, 'mkdir').mockImplementation((async (file, options) => {
+      const first = await realMkdir(file, options as { recursive: true });
+      if (!first) return first;
+      return process.platform === 'win32'
+        ? first.replace(/\\/g, '/').replace(/^[a-z]:/i, (drive) => drive === drive.toUpperCase() ? drive.toLowerCase() : drive.toUpperCase())
+        : `${first}/.`;
+    }) as typeof fs.mkdir);
+    const opened: string[] = [];
+    const realOpen = fs.open;
+    vi.spyOn(fs, 'open').mockImplementation(async (file, flags, mode) => {
+      opened.push(String(file));
+      return realOpen(file, flags, mode);
+    });
+    await makeDurableDirectory(path.join(dir, 'new', 'deeper'));
+    expect(opened).toEqual([path.join(dir, 'new'), dir]);
+  });
+
+  it('uses Windows path identity for drive casing and mixed separators on every test host', () => {
+    expect(directoryParentsToSync('c:/Users/runner/work/new/deeper', 'C:\\Users\\runner\\work\\NEW\\.', path.win32)).toEqual([
+      'c:\\Users\\runner\\work\\new',
+      'c:\\Users\\runner\\work',
+    ]);
+  });
+
+  it('stops at the root with an error when the created directory is not an ancestor', () => {
+    expect(() => directoryParentsToSync('/work/new/deeper', '/elsewhere', path.posix)).toThrow(/not an ancestor/);
+    expect(() => directoryParentsToSync('C:\\work\\new', 'D:\\work', path.win32)).toThrow(/not an ancestor/);
+    expect(directoryParentsToSync('C:\\new', 'c:\\new\\', path.win32)).toEqual(['C:\\']);
   });
 
   it('does not silently ignore ordinary directory I/O errors', async () => {
