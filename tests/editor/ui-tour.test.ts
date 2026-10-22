@@ -119,7 +119,17 @@ beforeEach(() => {
   settings.set('navPaneVisible', true);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Removing the DOM alone leaves each controller's interval and window
+  // listeners alive; later arrow keys can send an old tour into a lazy import.
+  for (const root of document.querySelectorAll<HTMLElement>('.pmd-tour')) {
+    const exit =
+      root.querySelector<HTMLButtonElement>('.pmd-tour-skip') ??
+      root.querySelector<HTMLButtonElement>('.pmd-tour-next'); // Done on the final step
+    exit?.click();
+  }
+  await vi.dynamicImportSettled();
+  document.documentElement.classList.remove('pmd-home-active');
   document.body.innerHTML = '';
   localStorage.clear();
   vi.useRealTimers();
@@ -373,6 +383,7 @@ describe('UI tour', () => {
       // …and Back from the editor step re-opens home (no glitch loop:
       // with home active again, advanceWhen stays false).
       btn('Back')!.click();
+      await vi.dynamicImportSettled();
       await vi.advanceTimersByTimeAsync(600);
       expect(document.documentElement.classList.contains('pmd-home-active')).toBe(true);
       expect(card()!.textContent).toContain('Create your first document');
