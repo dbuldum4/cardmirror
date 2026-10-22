@@ -19,27 +19,15 @@ jobs:
   preview:
     # The repository ID survives renames and excludes the original repository.
     if: github.event.repository.id == 1400663076
-    name: macOS preview (${{ matrix.label }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: Apple Silicon
-            os: macos-latest
-            arch: arm64
-            macho: arm64
-          - label: Intel
-            os: macos-15-intel
-            arch: x64
-            macho: x86_64
-    runs-on: ${{ matrix.os }}
+    name: macOS preview (Apple Silicon)
+    runs-on: macos-latest
     timeout-minutes: 45
     defaults:
       run:
         shell: bash
     env:
-      TARGET_ARCH: ${{ matrix.arch }}
-      MACHO_ARCH: ${{ matrix.macho }}
+      TARGET_ARCH: arm64
+      MACHO_ARCH: arm64
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
     steps:
@@ -136,7 +124,7 @@ jobs:
       - name: Upload macOS preview
         uses: actions/upload-artifact@v4
         with:
-          name: cardmirror-advanced-macos-${{ matrix.arch }}-preview
+          name: cardmirror-advanced-macos-arm64-preview
           path: |
             apps/desktop/release/CardMirror-Advanced-Preview-*.dmg
             apps/desktop/release/CardMirror-Advanced-Preview-*.zip
