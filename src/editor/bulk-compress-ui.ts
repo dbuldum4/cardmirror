@@ -240,7 +240,7 @@ export function runCompressSingleFileWeb(): Promise<void> {
       return {
         bytes: out,
         outputName: name,
-        filter: { name: 'CardMirror document', extensions: ['cmir'] },
+        filter: { name: 'CardMirror Advanced document', extensions: ['cmir'] },
         resultNote:
           after < before
             ? `Compressed: ${formatBytes(before)} → ${formatBytes(after)} (${pct}% smaller).`

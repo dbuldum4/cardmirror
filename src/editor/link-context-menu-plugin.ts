@@ -15,6 +15,7 @@
 import { Plugin } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 import type { Mark } from 'prosemirror-model';
+import { isSafeLinkHref } from '../schema/marks.js';
 import { schema } from '../schema/index.js';
 import { promptForText } from './text-prompt.js';
 import { showToast } from './toast.js';
@@ -209,6 +210,10 @@ function maybeCloseLinkContextMenu(e: MouseEvent | KeyboardEvent): void {
 }
 
 export function openLinkExternally(href: string): void {
+  if (!isSafeLinkHref(href)) {
+    showToast('This link uses an unsupported or unsafe address.');
+    return;
+  }
   const electron = getElectronHost();
   if (electron) {
     void electron.openExternal(href).catch((err) => {

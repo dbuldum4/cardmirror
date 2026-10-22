@@ -20,7 +20,7 @@
  *
  * Tokens are secrets: the directory is created 0700 and both files 0600
  * (best-effort on Windows, where POSIX modes don't map) — a shared Linux
- * box must not leak another user's session token. CardMirror mirrors its
+ * box must not leak another user's session token. CardMirror Advanced mirrors its
  * fast-paste endpoint here as kind "editor"; flowing apps register as kind
  * "flow". All cross-app transport is brokered HERE — renderer plugins
  * never see tokens or sockets.
@@ -93,20 +93,20 @@ export async function writeCardmirrorHandshake(port: number, token: string): Pro
   const dir = await ensureBridgeDir();
   const identity: IdentityFile = {
     schema: BRIDGE_SCHEMA,
-    app: 'cardmirror',
+    app: 'cardmirror-advanced',
     appVersion: app.getVersion(),
     kind: 'editor',
   };
   const session: SessionFile = { port, token, pid: process.pid };
-  await writeFileAtomic0600(path.join(dir, 'cardmirror.json'), identity);
-  await writeFileAtomic0600(path.join(dir, 'cardmirror.session.json'), session);
+  await writeFileAtomic0600(path.join(dir, 'cardmirror-advanced.json'), identity);
+  await writeFileAtomic0600(path.join(dir, 'cardmirror-advanced.session.json'), session);
 }
 
 /** Quit path: clear ONLY the session half. The identity file persists by
- *  design — that's what keeps a closed CardMirror selectable in flow-app
+ *  design — that's what keeps a closed CardMirror Advanced selectable in flow-app
  *  pickers (and vice versa for flow apps in ours). */
 export async function deleteCardmirrorHandshake(): Promise<void> {
-  await fs.unlink(path.join(bridgeDirPath(), 'cardmirror.session.json')).catch(() => {});
+  await fs.unlink(path.join(bridgeDirPath(), 'cardmirror-advanced.session.json')).catch(() => {});
 }
 
 async function readJsonCapped<T>(filePath: string): Promise<Partial<T> | null> {

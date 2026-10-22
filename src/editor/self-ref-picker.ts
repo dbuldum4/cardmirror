@@ -1,6 +1,6 @@
 /**
  * In-document section picker for live views / linked copies — the peek-pattern
- * rebuild (spec: CardMirror-selfref-picker-spec.md, 2026-07-11).
+ * rebuild (spec: CardMirror Advanced-selfref-picker-spec.md, 2026-07-11).
  *
  * ONE `collectHeadings` pass supplies everything: section extents come from
  * position math over the flat entry list (a stack sweep), never from

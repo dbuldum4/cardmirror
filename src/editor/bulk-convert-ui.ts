@@ -402,7 +402,7 @@ export function runConvertSingleFileWeb(): Promise<void> {
         bytes: await convertBytes(bytes, dir),
         outputName: swapExt(name, dir),
         filter: {
-          name: ext === 'cmir' ? 'CardMirror document' : 'Word document',
+          name: ext === 'cmir' ? 'CardMirror Advanced document' : 'Word document',
           extensions: [ext],
         },
       };

@@ -122,3 +122,12 @@ the full set lives only in a developer's gitignored local clone.
 generated file does embed those glyphs' path data), and the shipped
 application renders from it. The icons are not repackaged as an icon
 library or offered for resale.
+
+## Fork packaging formatter (BSD-3-Clause)
+
+CardMirror Advanced vendors a patched sprintf-js 1.1.3 implementation for desktop
+packaging under the private name `@cardmirror-advanced/sprintf-js`. Copyright
+(c) 2007-present, Alexandru Mărășteanu. The original BSD-3-Clause license is
+preserved in [apps/desktop/vendor/sprintf-js/LICENSE](./apps/desktop/vendor/sprintf-js/LICENSE).
+The patch bounds format precision/width, format length, and cache entries.
+This is an independently modified copy, not an upstream fixed release.

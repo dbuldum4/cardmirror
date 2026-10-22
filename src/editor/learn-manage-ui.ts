@@ -488,8 +488,8 @@ async function linkCardToFile(cardId: string): Promise<void> {
   const host = getHost();
   const opened = await host.openFile({
     filters: [
-      { name: 'CardMirror & Word documents', extensions: ['cmir', 'docx'] },
-      { name: 'CardMirror', extensions: ['cmir'] },
+      { name: 'CardMirror Advanced & Word documents', extensions: ['cmir', 'docx'] },
+      { name: 'CardMirror Advanced', extensions: ['cmir'] },
       { name: 'Word', extensions: ['docx'] },
     ],
   });

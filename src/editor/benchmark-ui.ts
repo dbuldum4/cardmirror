@@ -283,7 +283,7 @@ function notesSection(): HTMLElement {
   const meth = document.createElement('p');
   meth.className = 'pmd-bench-note-meth';
   meth.textContent =
-    "Self-reported by CardMirror's own renderer; frame rate is capped by your display's " +
+    "Self-reported by CardMirror Advanced's own renderer; frame rate is capped by your display's " +
     'refresh rate.';
   sec.appendChild(meth);
   return sec;

@@ -235,7 +235,7 @@ export class VoiceController {
   /** First-run flow when the models aren't downloaded yet. */
   private async offerModelDownload(host: VoiceHostApi): Promise<void> {
     if (!host.voiceDownloadModel || !host.voiceModelInfo) {
-      showToast("Voice model not downloaded, and this install can't fetch it — update CardMirror", { durationMs: 3200 });
+      showToast("Voice model not downloaded, and this install can't fetch it — update CardMirror Advanced", { durationMs: 3200 });
       return;
     }
     const info = await host.voiceModelInfo();

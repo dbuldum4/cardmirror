@@ -47,17 +47,50 @@ function journalPath(): string {
 
 function fold(p: string): string {
   const norm = path.normalize(p);
-  return process.platform === 'win32' || process.platform === 'darwin'
+  return process.platform === 'win32'
     ? norm.toLowerCase()
     : norm;
 }
 
-async function realOrRaw(p: string): Promise<string> {
+/** Resolve existing ancestors too: realpath(new/file) alone misses a symlinked
+ * parent when the leaf does not exist yet. Fail closed on I/O errors and
+ * dangling symlinks rather than falling back to a lexical authorization. */
+async function canonicalPath(p: string): Promise<string | null> {
+  if (typeof p !== 'string' || !path.isAbsolute(p) || p.includes('\0')) return null;
   try {
     return await fs.realpath(p);
-  } catch {
-    return p;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') return null;
+    try {
+      // An existing dangling symlink must not become a missing plain filename.
+      await fs.lstat(p);
+      return null;
+    } catch (statErr) {
+      if ((statErr as NodeJS.ErrnoException).code !== 'ENOENT') return null;
+    }
+    const parent = path.dirname(p);
+    if (parent === p) return null;
+    const realParent = await canonicalPath(parent);
+    return realParent === null ? null : path.join(realParent, path.basename(p));
   }
+}
+
+let grantGeneration = 0;
+const pendingGrants = new Set<Promise<void>>();
+function queueGrant(p: string, dir: boolean): void {
+  const generation = grantGeneration;
+  const job = (async () => {
+    const real = await canonicalPath(p);
+    if (real === null || generation !== grantGeneration) return;
+    const folded = fold(real);
+    (dir ? grantedDirs : grantedFiles).add(folded);
+    if (!dir) {
+      await loadJournalOnce();
+      if (generation === grantGeneration) rememberInJournal(folded);
+    }
+  })();
+  pendingGrants.add(job);
+  void job.finally(() => pendingGrants.delete(job));
 }
 
 function loadJournalOnce(): Promise<void> {
@@ -113,17 +146,7 @@ function rememberInJournal(folded: string): void {
  *  spawn payload). Persisted so it stays reopenable in later sessions. */
 export function grantReadPath(p: string): void {
   if (typeof p !== 'string' || !p) return;
-  const folded = fold(p);
-  grantedFiles.add(folded);
-  void loadJournalOnce().then(() => rememberInJournal(folded));
-  // Also grant the canonical form when it differs (symlinked pick).
-  void realOrRaw(p).then((real) => {
-    const rf = fold(real);
-    if (rf !== folded) {
-      grantedFiles.add(rf);
-      void loadJournalOnce().then(() => rememberInJournal(rf));
-    }
-  });
+  queueGrant(p, false);
 }
 
 /** A directory the user picked — its whole subtree is in play for this
@@ -132,8 +155,7 @@ export function grantReadPath(p: string): void {
  *  an actual user pick each session. */
 export function grantReadDir(d: string): void {
   if (typeof d !== 'string' || !d) return;
-  grantedDirs.add(fold(d));
-  void realOrRaw(d).then((real) => grantedDirs.add(fold(real)));
+  queueGrant(d, true);
 }
 
 /** Mirror of the renderer's `defaultSpeechDocFolder` setting: the one
@@ -158,17 +180,16 @@ const WRITE_EXTS = new Set(['.cmir', '.docx', '.zip']);
 export async function isWriteAllowed(p: string): Promise<boolean> {
   if (typeof p !== 'string' || !p) return false;
   if (!WRITE_EXTS.has(path.extname(p).toLowerCase())) return false;
-  await loadJournalOnce();
-  const candidates = new Set<string>([fold(p), fold(await realOrRaw(p))]);
-  const bases: string[] = [];
+  await Promise.all([...pendingGrants]);
+  const target = await canonicalPath(p);
+  if (target === null) return false;
+  const c = fold(target);
+  const bases = [...grantedDirs];
   for (const r of [...libraryRoots, ...writeFolders]) {
-    bases.push(fold(r));
-    bases.push(fold(await realOrRaw(r)));
+    const real = await canonicalPath(r);
+    if (real !== null) bases.push(fold(real));
   }
-  bases.push(...grantedDirs);
-  for (const c of candidates) {
-    if (bases.some((b) => c !== b && within(c, b))) return true;
-  }
+  if (bases.some((b) => c !== b && within(c, b))) return true;
   return false;
 }
 
@@ -186,6 +207,7 @@ export function setLibraryRoots(roots: string[]): void {
 export async function grantLegacyRecents(paths: string[]): Promise<boolean> {
   await loadJournalOnce();
   if (journalExists) return false;
+  journalExists = true; // Close the one-shot gate before any deferred journal write.
   for (const p of (Array.isArray(paths) ? paths : []).slice(0, 24)) {
     if (typeof p === 'string' && p) grantReadPath(p);
   }
@@ -202,23 +224,24 @@ function within(folded: string, base: string): boolean {
  *  journal). */
 export async function isReadAllowed(p: string): Promise<boolean> {
   await loadJournalOnce();
-  const candidates = new Set<string>([fold(p), fold(await realOrRaw(p))]);
-  const bases: string[] = [];
+  await Promise.all([...pendingGrants]);
+  const target = await canonicalPath(p);
+  if (target === null) return false;
+  const c = fold(target);
+  if (grantedFiles.has(c) || journalPaths.includes(c)) return true;
+  const bases = [...grantedDirs];
   for (const r of libraryRoots) {
-    bases.push(fold(r));
-    bases.push(fold(await realOrRaw(r)));
+    const real = await canonicalPath(r);
+    if (real !== null) bases.push(fold(real));
   }
-  bases.push(...grantedDirs);
-  for (const c of candidates) {
-    if (grantedFiles.has(c)) return true;
-    if (journalPaths.includes(c)) return true;
-    if (bases.some((b) => within(c, b))) return true;
-  }
+  if (bases.some((b) => within(c, b))) return true;
   return false;
 }
 
 /** Test hook: wipe all state (session + journal cache). */
 export function resetReadScopeForTests(): void {
+  grantGeneration++;
+  pendingGrants.clear();
   writeFolders = [];
   grantedFiles.clear();
   grantedDirs.clear();

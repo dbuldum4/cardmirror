@@ -404,8 +404,8 @@ setSaveHealListener(({ error, healed }) => {
     severity: healed ? 'warning' : 'error',
     title: healed ? 'Document repaired while saving' : 'Document damaged — repair failed',
     body: healed
-      ? 'CardMirror repaired invalid document structure while saving. Please report this — it means a bug corrupted the document in memory. Reopening the document clears the condition.'
-      : 'CardMirror found invalid document structure it could not repair while saving. Please report this.',
+      ? 'CardMirror Advanced repaired invalid document structure while saving. Please report this — it means a bug corrupted the document in memory. Reopening the document clears the condition.'
+      : 'CardMirror Advanced found invalid document structure it could not repair while saving. Please report this.',
     key: `save-heal:${healed}`,
   });
 });
@@ -991,7 +991,7 @@ function updatePlainPasteIndicator(armed: boolean): void {
 const zoomOutBtn = document.getElementById('zoom-out-btn') as HTMLButtonElement;
 const zoomInBtn = document.getElementById('zoom-in-btn') as HTMLButtonElement;
 const zoomResetBtn = document.getElementById('zoom-reset-btn') as HTMLButtonElement;
-/** Bottom-right CardMirror mark: drag the focused doc's file into other
+/** Bottom-right CardMirror Advanced mark: drag the focused doc's file into other
  *  apps (desktop). Synced from `updateWindowTitle`, the one path every
  *  doc-identity change already goes through. */
 const syncFileDragMark = installFileDragMark(
@@ -1000,7 +1000,7 @@ const syncFileDragMark = installFileDragMark(
 );
 /** Provenance stamped into every .docx this app writes (app.xml
  *  Application / AppVersion + the cmirGenerator custom property). */
-const DOCX_GENERATOR = { application: 'CardMirror', version: appVersion } as const;
+const DOCX_GENERATOR = { application: 'CardMirror Advanced', version: appVersion } as const;
 const zoomPct = document.getElementById('zoom-pct')!;
 
 // Module-level state. Declared before the settings subscriber registers
@@ -5430,9 +5430,9 @@ function makeStarterDoc(): PMNode {
   const blank = () => n['paragraph']!.create(null);
 
   return n['doc']!.createChecked(null, [
-    n['pocket']!.create({ id: newHeadingId() }, schema.text('Welcome to CardMirror')),
+    n['pocket']!.create({ id: newHeadingId() }, schema.text('Welcome to CardMirror Advanced')),
     paraText(
-      'CardMirror is an editor for debate evidence that reads and writes the same Word .docx files as Verbatim. The boxed heading above is a Pocket — Verbatim\'s name for a top-level section. Everything below is live: type in it, edit it, and try the shortcuts as you go.',
+      'CardMirror Advanced is an editor for debate evidence that reads and writes the same Word .docx files as Verbatim. The boxed heading above is a Pocket — Verbatim\'s name for a top-level section. Everything below is live: type in it, edit it, and try the shortcuts as you go.',
     ),
     blank(),
     paraText(
@@ -5443,18 +5443,18 @@ function makeStarterDoc(): PMNode {
     // Section 1: Try it
     n['hat']!.create({ id: newHeadingId() }, schema.text('1. Open your own files')),
     paraText(
-      'Click 📂 in the ribbon to open a real Verbatim file. CardMirror renders its styles and structure faithfully; Save As (💾, or Mod-Shift-S) writes back a Verbatim-native .docx.',
+      'Click 📂 in the ribbon to open a real Verbatim file. CardMirror Advanced renders its styles and structure faithfully; Save As (💾, or Mod-Shift-S) writes back a Verbatim-native .docx.',
     ),
     blank(),
     paraText(
-      'CardMirror keeps crash-recovery journals of unsaved work, but save early anyway — a real .docx on disk is what Verbatim and your teammates can open.',
+      'CardMirror Advanced keeps crash-recovery journals of unsaved work, but save early anyway — a real .docx on disk is what Verbatim and your teammates can open.',
     ),
     blank(),
 
     // Section 2: Structural styles
     n['hat']!.create({ id: newHeadingId() }, schema.text('2. Structural styles')),
     paraText(
-      'CardMirror uses Verbatim\'s four heading levels — Pocket, Hat, Block, Tag — plus Analytics and Undertags. Each has a function key (rebindable in Settings → Keyboard shortcuts):',
+      'CardMirror Advanced uses Verbatim\'s four heading levels — Pocket, Hat, Block, Tag — plus Analytics and Undertags. Each has a function key (rebindable in Settings → Keyboard shortcuts):',
     ),
     blank(),
     paraIndented('F4 = Pocket'),
@@ -5552,18 +5552,18 @@ function makeStarterDoc(): PMNode {
     // Section 6: Learn
     n['hat']!.create({ id: newHeadingId() }, schema.text('6. Study your evidence')),
     paraText(
-      'CardMirror can turn evidence into spaced-repetition flashcards. They live only on your machine — they never travel with a .docx you share. Select some text and use Create Flashcard to anchor a question-and-answer or cloze card to it; anchored cards show up in the comments column beside the text they came from.',
+      'CardMirror Advanced can turn evidence into spaced-repetition flashcards. They live only on your machine — they never travel with a .docx you share. Select some text and use Create Flashcard to anchor a question-and-answer or cloze card to it; anchored cards show up in the comments column beside the text they came from.',
     ),
     blank(),
     paraText(
-      'The Home screen\'s Learn section runs your due reviews. With AI features on, CardMirror can draft cards for you too.',
+      'The Home screen\'s Learn section runs your due reviews. With AI features on, CardMirror Advanced can draft cards for you too.',
     ),
     blank(),
 
     // Section 7: Collaboration
     n['hat']!.create({ id: newHeadingId() }, schema.text('7. Share and co-edit')),
     paraText(
-      'In the desktop app, CardMirror machines can send cards to each other and co-edit documents live — both end-to-end encrypted. Turn on Enable collaboration in ⚙ → Collaboration to get your pairing code and the Send / Receive pills, then swap codes with teammates to send cards straight to their machines.',
+      'In the desktop app, CardMirror Advanced machines can send cards to each other and co-edit documents live — both end-to-end encrypted. Turn on Enable collaboration in ⚙ → Collaboration to get your pairing code and the Send / Receive pills, then swap codes with teammates to send cards straight to their machines.',
     ),
     blank(),
     paraText(
@@ -5614,15 +5614,15 @@ function makeMobileStarterDoc(): PMNode {
   const blank = () => n['paragraph']!.create(null);
 
   return n['doc']!.createChecked(null, [
-    n['pocket']!.create({ id: newHeadingId() }, schema.text('Welcome to CardMirror')),
+    n['pocket']!.create({ id: newHeadingId() }, schema.text('Welcome to CardMirror Advanced')),
     paraText(
-      'This is the mobile view — a quick way to read, navigate, and lightly edit your debate files. It opens and saves the same Word .docx files as Verbatim and the CardMirror desktop app.',
+      'This is the mobile view — a quick way to read, navigate, and lightly edit your debate files. It opens and saves the same Word .docx files as Verbatim and the CardMirror Advanced desktop app.',
     ),
     blank(),
 
     n['hat']!.create({ id: newHeadingId() }, schema.text('1. Open a file')),
     paraText(
-      'Tap ⋮ (top-right) to open a Verbatim or CardMirror file, or start a new one. The mobile view is built for reading and light edits, not building a document from scratch — to write a new doc, switch to the desktop layout from the same ⋮ menu ("Use desktop layout"). Saving writes back the same Word format either way.',
+      'Tap ⋮ (top-right) to open a Verbatim or CardMirror Advanced file, or start a new one. The mobile view is built for reading and light edits, not building a document from scratch — to write a new doc, switch to the desktop layout from the same ⋮ menu ("Use desktop layout"). Saving writes back the same Word format either way.',
     ),
     blank(),
 
@@ -5641,7 +5641,7 @@ function makeMobileStarterDoc(): PMNode {
 
     n['hat']!.create({ id: newHeadingId() }, schema.text('4. Cutting and full editing live on the desktop')),
     paraText(
-      'The mobile view is built for reading, navigating, and quick fixes. For cutting cards, structural edits, and the full keyboard workflow, open the same file in the CardMirror desktop app — it is the same document.',
+      'The mobile view is built for reading, navigating, and quick fixes. For cutting cards, structural edits, and the full keyboard workflow, open the same file in the CardMirror Advanced desktop app — it is the same document.',
     ),
   ]);
 }
@@ -6531,7 +6531,7 @@ function activeSavedDocId(): string | undefined {
 
 /** Stamp `docId` straight into the active file on disk — minimal +
  *  lossless (adds the `.docx` custom property / `.cmir` field without
- *  re-rendering the body), so a flashcard created in a file CardMirror
+ *  re-rendering the body), so a flashcard created in a file CardMirror Advanced
  *  didn't author survives a reload without a manual save. No-op on the
  *  web edition, for never-saved docs (no handle), or when the file
  *  already carries an id (it was adopted on open). Best-effort:
@@ -6742,9 +6742,9 @@ function bytesLookLikeDocx(bytes: Uint8Array): boolean {
  *  recognized" or the first filter; users can swap to "Word only"
  *  if they want to narrow). */
 const OPEN_FILE_FILTERS = [
-  { name: 'CardMirror, Word, or recovery journal', extensions: ['cmir', 'cmir-journal', 'docx'] },
-  { name: 'CardMirror native (.cmir)', extensions: ['cmir'] },
-  { name: 'CardMirror recovery journal (.cmir-journal)', extensions: ['cmir-journal'] },
+  { name: 'CardMirror Advanced, Word, or recovery journal', extensions: ['cmir', 'cmir-journal', 'docx'] },
+  { name: 'CardMirror Advanced native (.cmir)', extensions: ['cmir'] },
+  { name: 'CardMirror Advanced recovery journal (.cmir-journal)', extensions: ['cmir-journal'] },
   { name: 'Microsoft Word (.docx)', extensions: ['docx'] },
 ];
 
@@ -6821,7 +6821,7 @@ async function resolveOpenedFile(
  *  format radio the user picked. */
 function saveFiltersForFormat(format: 'cmir' | 'docx'): { name: string; extensions: string[] }[] {
   if (format === 'cmir') {
-    return [{ name: 'CardMirror native (.cmir)', extensions: ['cmir'] }];
+    return [{ name: 'CardMirror Advanced native (.cmir)', extensions: ['cmir'] }];
   }
   return [{ name: 'Microsoft Word (.docx)', extensions: ['docx'] }];
 }
@@ -7283,7 +7283,7 @@ const homeCallbacks: HomeScreenCallbacks = {
         /* openPath API absent (old preload / web) — skip the cross-window guard */
       }
       if (liveElsewhere) {
-        showToast('That session is already open in another CardMirror window.');
+        showToast('That session is already open in another CardMirror Advanced window.');
         return;
       }
       homeScreen.hide();
@@ -7616,7 +7616,7 @@ getElectronHost()?.onFocusAnchor(({ descriptor }) => {
 });
 
 /** Subscribe to main's `host:external-open` forward (an OS "Open
- *  with… CardMirror" routed to this existing multi-pane window). Opens
+ *  with… CardMirror Advanced" routed to this existing multi-pane window). Opens
  *  the path through the standard routing, so it lands in this window's
  *  slot picker rather than a blank new window. */
 function installExternalOpenListener(): void {
@@ -8095,7 +8095,7 @@ function syncRepresentedFile(handle: unknown): void {
  *  of truth where the OS title isn't visible (frameless Electron
  *  windows, tiling WMs, hidden title-bar themes). Cheap; called on
  *  open / save / multi-doc focus change. Title format: single-doc
- *  `${filename} — CardMirror` ('CardMirror' if untitled); multi-pane
+ *  `${filename} — CardMirror Advanced` ('CardMirror Advanced' if untitled); multi-pane
  *  joins every non-empty slot's name — the per-pane chip already
  *  identifies the focused doc, so the title serves as a workspace
  *  summary. */
@@ -8108,12 +8108,12 @@ function updateWindowTitle(): void {
   if (multiDocActive && multiDocGetAllFilenames) {
     const names = multiDocGetAllFilenames().filter((n): n is string => !!n);
     document.title = names.length > 0
-      ? `${names.join(' · ')} — CardMirror`
-      : 'CardMirror';
+      ? `${names.join(' · ')} — CardMirror Advanced`
+      : 'CardMirror Advanced';
   } else {
     document.title = focused.filename
-      ? `${focused.filename} — CardMirror`
-      : 'CardMirror';
+      ? `${focused.filename} — CardMirror Advanced`
+      : 'CardMirror Advanced';
   }
   // In-app filename chip. The chip itself is CSS-hidden in
   // multi-pane mode (each per-pane chip shows the pane's own
@@ -8326,7 +8326,7 @@ async function confirmDocxDropsLiveLinks(): Promise<boolean> {
       `This document contains ${what}. Word (.docx) files can't hold live links, ` +
       `so saving to .docx flattens ${them} to plain cards — the content stays, but the ` +
       `link to the source is dropped and won't come back when you reopen the .docx. ` +
-      `Save as CardMirror (.cmir) instead to keep ${them} live.`,
+      `Save as CardMirror Advanced (.cmir) instead to keep ${them} live.`,
     confirmLabel: 'Save to Word anyway',
     cancelLabel: 'Cancel',
   });
@@ -10152,7 +10152,7 @@ async function initPlugins(): Promise<void> {
   reconcilePluginState(new Set(installed.map((p) => p.id)));
   for (const p of installed) {
     if (!isPluginEnabled(p.id)) continue;
-    // Listed-but-incompatible (needs a newer CardMirror): main refuses to
+    // Listed-but-incompatible (needs a newer CardMirror Advanced): main refuses to
     // serve its bundle anyway; skipping here avoids a spurious failure toast.
     if (p.incompatible) continue;
     // A rejecting IPC call must not skip the remaining plugins (or escape
@@ -10557,7 +10557,7 @@ async function initSingleDocBoot(): Promise<void> {
     if (electron) {
       migrateAutoUpdateOptOut(() => {
         showToast(
-          'CardMirror now checks for updates automatically. You can turn this off — or pause it for a tournament — in Settings → General → About this install.',
+          'CardMirror Advanced now checks for updates automatically. You can turn this off — or pause it for a tournament — in Settings → General → About this install.',
         );
       });
     }
@@ -10805,8 +10805,8 @@ async function handleModeSwitchInner(newValue: boolean): Promise<void> {
   let message: string;
   if (newValue) {
     message = electron
-      ? 'Any other open CardMirror windows will close, and every open document will reopen as a pane in this window.'
-      : 'Every open document will move into a pane in this window. Your other CardMirror windows will ask you to close them.';
+      ? 'Any other open CardMirror Advanced windows will close, and every open document will reopen as a pane in this window.'
+      : 'Every open document will move into a pane in this window. Your other CardMirror Advanced windows will ask you to close them.';
   } else {
     message = electron
       ? 'The editor will reload and your open documents will each reopen in their own window.'
@@ -11208,7 +11208,7 @@ async function saveRecoveryEntry(entry: JournalEntry): Promise<boolean> {
     const bytes = await reserializeJournalAs(entry, choice.format);
     const filters =
       choice.format === 'cmir'
-        ? [{ name: 'CardMirror native (.cmir)', extensions: ['cmir'] }]
+        ? [{ name: 'CardMirror Advanced native (.cmir)', extensions: ['cmir'] }]
         : [{ name: 'Microsoft Word (.docx)', extensions: ['docx'] }];
     const result = await host.saveAs(choice.filename, bytes, {
       filters,

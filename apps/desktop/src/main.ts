@@ -1,5 +1,5 @@
 /**
- * CardMirror desktop — Electron main process.
+ * CardMirror Advanced desktop — Electron main process.
  *
  * Responsibilities:
  *   - Create and manage the BrowserWindow that hosts the renderer.
@@ -15,6 +15,8 @@
  *     journals, and auto-update.
  */
 
+import { createClipboardBridge } from './clipboard-bridge.js';
+import { pathToFileURL } from 'node:url';
 import { arrangementRects, type ArrangeOptions } from './arrange-windows.js';
 import {
   app,
@@ -23,6 +25,7 @@ import {
   MenuItemConstructorOptions,
   MessageChannelMain,
   clipboard,
+  ClipboardItem,
   crashReporter,
   dialog,
   ipcMain,
@@ -124,13 +127,16 @@ import { hardenStdio } from './stdio-harden.js';
 // internal error logging — can raise an uncaught EPIPE and pop the
 // main-process crash dialog. Nothing may log before this line.
 hardenStdio();
+app.setName('CardMirror Advanced');
 
 const DEV_SERVER_URL = 'http://localhost:5173';
 
 /** Where the app's own pages come from: the Vite dev server in development,
  *  the packaged renderer files otherwise. Used by the navigation guard. */
 function ownOrigins(): string[] {
-  return app.isPackaged ? ['file:'] : [new URL(DEV_SERVER_URL).origin];
+  return app.isPackaged
+    ? ['index.html', 'timer.html'].map((name) => pathToFileURL(path.join(process.resourcesPath, 'renderer', name)).href)
+    : [new URL(DEV_SERVER_URL).origin];
 }
 
 /** Apply the window-open / navigation policy (navigation-guard.ts) to a
@@ -143,6 +149,10 @@ function hardenWindow(win: BrowserWindow): void {
     if (d.kind === 'external') void shell.openExternal(d.url);
     return { action: 'deny' };
   });
+  win.webContents.on('will-redirect', (event, url) => {
+    if (decideNavigation(url, ownOrigins()).kind !== 'allow') event.preventDefault();
+  });
+  win.webContents.on('will-attach-webview', (event) => event.preventDefault());
   win.webContents.on('will-navigate', (event, url) => {
     const d = decideNavigation(url, ownOrigins());
     if (d.kind === 'allow') return;
@@ -189,8 +199,8 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 // pull the dump from there manually and attach it to a bug report.
 // No telemetry, no remote endpoint, no third-party SDK.
 crashReporter.start({
-  productName: 'CardMirror',
-  companyName: 'CardMirror',
+  productName: 'CardMirror Advanced',
+  companyName: 'CardMirror Advanced',
   submitURL: '',
   uploadToServer: false,
 });
@@ -340,7 +350,7 @@ const cloudWaitDelay = (ms: number): Promise<void> => new Promise((r) => setTime
  * "online only" placeholder that hasn't downloaded reads back SHORT — often 0
  * bytes — because the provider materializes the content asynchronously and the
  * first read returns before the download lands. (A 0-byte read is what surfaces
- * downstream as "Not a CardMirror file: failed to parse JSON".) Opening the file
+ * downstream as "Not a CardMirror Advanced file: failed to parse JSON".) Opening the file
  * re-posts the fetch, so we re-read on a short interval to let an in-flight
  * download finish, up to a bounded timeout.
  *
@@ -387,7 +397,7 @@ async function isEmptyOnDisk(filePath: string, bytes: Buffer): Promise<boolean> 
 }
 
 /** Open a file the OS handed us (macOS `open-file`, Windows / Linux
- *  argv at launch or second-instance — e.g. "Open with… CardMirror").
+ *  argv at launch or second-instance — e.g. "Open with… CardMirror Advanced").
  *  Multi-pane reuses an open window and routes the file through its
  *  slot picker (no blank new window); single-pane / cold launch spawns
  *  a fresh window with the file as its initial doc (VS Code / Word-like,
@@ -463,7 +473,7 @@ function createWindow(initialDoc?: InitialDocPayload): BrowserWindow {
     // degradation from there.
     minWidth: 0,
     minHeight: 0,
-    title: 'CardMirror',
+    title: 'CardMirror Advanced',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -532,9 +542,9 @@ function createWindow(initialDoc?: InitialDocPayload): BrowserWindow {
     recentReloads.push(now);
     if (recentReloads.length > 3) {
       dialog.showErrorBox(
-        'CardMirror kept crashing',
+        'CardMirror Advanced kept crashing',
         'The editor window crashed several times in a row. Your unsaved work is preserved ' +
-          'in the recovery journal — please quit and reopen CardMirror.',
+          'in the recovery journal — please quit and reopen CardMirror Advanced.',
       );
       return;
     }
@@ -643,39 +653,9 @@ ipcMain.handle('host:clipboard-read-text', () => clipboard.readText());
 /** Editor context-menu Paste: both flavors in one read so the
  *  renderer can prefer rich html and fall back to plain text
  *  without a second IPC round trip racing the clipboard. */
-ipcMain.handle('host:clipboard-read-html', () => ({
-  html: clipboard.readHTML(),
-  text: clipboard.readText(),
-}));
-ipcMain.handle(
-  'host:clipboard-write-html',
-  (_evt, payload?: { html?: unknown; text?: unknown }) => {
-    const html = typeof payload?.html === 'string' ? payload.html : '';
-    const text = typeof payload?.text === 'string' ? payload.text : '';
-    if (!html && !text) return false;
-    // Omit empty flavors — passing html: '' would REGISTER an empty
-    // text/html format, and Word/Docs prefer the HTML flavor, so a
-    // text-only copy would paste as nothing there.
-    const data: Electron.Data = {};
-    if (html) data.html = html;
-    if (text) data.text = text;
-    clipboard.write(data);
-    // clipboard.write returns void — verify by reading the text
-    // flavor back (both flavors land in the one atomic write, so
-    // text present ⇒ the write took). Bounded compare: length + a
-    // prefix, so multi-megabyte cards don't pay a full scan. The
-    // only blind spot is another app overwriting the clipboard in
-    // the microseconds between write and read — which reports a
-    // false FAILURE, the safe direction.
-    if (text) {
-      const readBack = clipboard.readText();
-      const N = 4096;
-      return readBack.length === text.length && readBack.slice(0, N) === text.slice(0, N);
-    }
-    // html-only payload (no callers today): trust the write.
-    return true;
-  },
-);
+const clipboardBridge = createClipboardBridge(clipboard, (data) => new ClipboardItem(data));
+ipcMain.handle('host:clipboard-read-html', () => clipboardBridge.readRich());
+ipcMain.handle('host:clipboard-write-html', (_event, payload?: { html?: unknown; text?: unknown }) => clipboardBridge.writeRich(payload));
 
 /** Toggle DevTools on the window that asked. Backs the rebindable
  *  "Open Developer Console" ribbon command: the packaged app sets a
@@ -746,7 +726,7 @@ ipcMain.handle('host:show-item-in-folder', (_event, handle: unknown) => {
 });
 
 /** Native drag of a saved document out of the window — the status-bar
- *  CardMirror mark (renderer: file-drag-mark.ts), the cross-platform twin
+ *  CardMirror Advanced mark (renderer: file-drag-mark.ts), the cross-platform twin
  *  of the macOS title-bar proxy icon. `startDrag` has to run in response
  *  to the renderer's own dragstart, hence `on` + `send` rather than
  *  `handle`. The path is the doc's handle (absolute on desktop); anything
@@ -1912,7 +1892,7 @@ ipcMain.handle('host:pick-history-file', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   const result = await dialog.showOpenDialog(win ?? BrowserWindow.getAllWindows()[0]!, {
     defaultPath: journalsDir(),
-    filters: [{ name: 'CardMirror session history', extensions: ['cmir-history'] }],
+    filters: [{ name: 'CardMirror Advanced session history', extensions: ['cmir-history'] }],
     properties: ['openFile'],
   });
   return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]!;
@@ -3136,19 +3116,19 @@ ipcMain.handle(
 
 /** Public GitHub Releases page — fallback link surfaced in update
  *  dialogs so users always have a manual-download path. */
-const RELEASES_URL = 'https://github.com/ant981228/cardmirror/releases';
+const RELEASES_URL = 'https://github.com/dbuldum4/cardmirror-advanced/releases';
 
 /** The user manual (MANUAL.md), rendered on GitHub. Linked from the Help
  *  menu so the full guide is one click away. */
-const MANUAL_URL = 'https://github.com/ant981228/cardmirror/blob/main/MANUAL.md';
+const MANUAL_URL = 'https://github.com/dbuldum4/cardmirror-advanced/blob/main/MANUAL.md';
 
 /** The privacy policy (PRIVACY.md), rendered on GitHub. Linked from the Help
  *  menu alongside the manual (and from Settings → General). */
-const PRIVACY_URL = 'https://github.com/ant981228/cardmirror/blob/main/PRIVACY.md';
+const PRIVACY_URL = 'https://github.com/dbuldum4/cardmirror-advanced/blob/main/PRIVACY.md';
 
 /** The terms of use (TERMS.md), rendered on GitHub. Linked from the Help menu
  *  alongside the manual and privacy policy (and from Settings → General). */
-const TERMS_URL = 'https://github.com/ant981228/cardmirror/blob/main/TERMS.md';
+const TERMS_URL = 'https://github.com/dbuldum4/cardmirror-advanced/blob/main/TERMS.md';
 
 /** Best-effort dialog-parent lookup. Prefers the focused window,
  *  but if the user has alt-tabbed away between clicking
@@ -3195,7 +3175,7 @@ function showUpdateAvailableDialog(info: { version: string }): void {
       defaultId: 0,
       cancelId: macManual ? 1 : 0,
       title: 'Update available',
-      message: `CardMirror ${info.version} is available.`,
+      message: `CardMirror Advanced ${info.version} is available.`,
       detail: macManual
         ? "Open the release page to download the new .dmg and reinstall — this install can't update itself automatically."
         : 'Downloading in the background. When it finishes, a chip appears in the status bar — click it to restart into the update.',
@@ -3264,7 +3244,7 @@ function runUpdateCheck(opts: UpdateCheckOpts): void {
       type: 'info',
       title: 'No updates',
       message: "You're on the latest version.",
-      detail: `CardMirror ${app.getVersion()}`,
+      detail: `CardMirror Advanced ${app.getVersion()}`,
     });
   };
 
@@ -3349,7 +3329,7 @@ function isTimerWindow(w: BrowserWindow): boolean {
 
 /** Arrange Windows (Verbatim's Window Arranger): the speech doc's window
  *  takes one side of the invoking window's display, every other
- *  CardMirror window the other side — all of them the same rectangle,
+ *  CardMirror Advanced window the other side — all of them the same rectangle,
  *  stacked, full height — and the invoking window ends up in front.
  *  Speech window = the registered speech doc's, or failing that a
  *  window holding a doc whose filename says "speech" (Verbatim's own
@@ -3439,7 +3419,7 @@ function openTimerWindow(popoutOpts?: TimerPopoutOpts): void {
     skipTaskbar: true,
     alwaysOnTop: true,
     show: false,
-    title: 'Timer — CardMirror',
+    title: 'Timer — CardMirror Advanced',
     webPreferences: {
       // Minimal dedicated preload: exposes ONLY a resize call (see
       // timer-popout-preload.ts). Everything else the pop-out does
@@ -3663,7 +3643,7 @@ function startAutoUpdate(): void {
 
 // Single-instance lock so OS double-clicks of `.cmir` / `.docx`
 // don't spawn a second copy of the app. If we don't hold the
-// lock, a previous CardMirror process is already running and
+// lock, a previous CardMirror Advanced process is already running and
 // will receive the file path via the `second-instance` event
 // below — bail out of this process cleanly.
 const gotLock = app.requestSingleInstanceLock();
@@ -3826,6 +3806,6 @@ app.on('will-quit', (event) => {
   }
   void stopFastPasteBridge();
   // Clears only the SESSION half (port/token); the identity file persists
-  // so flow-app pickers can still list a closed CardMirror.
+  // so flow-app pickers can still list a closed CardMirror Advanced.
   void deleteCardmirrorHandshake();
 });

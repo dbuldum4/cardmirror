@@ -347,7 +347,7 @@ export function registerVoiceIpc(): void {
   }));
 
   ipcMain.handle('host:voice-download-model', async (event) =>
-    LITE_BUILD ? { ok: false, error: 'Model downloads are disabled in CardMirror Lite.' } : downloadModel(event.sender),
+    LITE_BUILD ? { ok: false, error: 'Model downloads are disabled in CardMirror Advanced Lite.' } : downloadModel(event.sender),
   );
 
   ipcMain.handle('host:voice-delete-model', async () => {

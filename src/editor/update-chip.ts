@@ -35,7 +35,7 @@ export function renderUpdateChip(el: HTMLButtonElement, s: UpdateChipState | nul
   el.hidden = false;
   if (s.state === 'ready') {
     el.textContent = `Update ${s.version} ready — restart to install`;
-    el.title = 'Restart CardMirror now to finish installing the update';
+    el.title = 'Restart CardMirror Advanced now to finish installing the update';
   } else {
     el.textContent = `Update ${s.version} available`;
     el.title = 'Open the release page to download the update';

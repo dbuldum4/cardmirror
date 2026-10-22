@@ -139,7 +139,7 @@ function readAloudBucket(node: PMNode, parent: PMNode): 'body' | 'other' | null 
   return null;
 }
 
-function countWords(s: string): number {
+export function countWords(s: string): number {
   const trimmed = s.trim();
   if (trimmed.length === 0) return 0;
   return trimmed.split(/\s+/).length;

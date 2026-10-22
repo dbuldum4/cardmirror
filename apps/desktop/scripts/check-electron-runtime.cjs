@@ -5,7 +5,7 @@ const { spawnSync } = require('node:child_process');
 
 if (!process.versions.electron) {
   const electron = require('electron');
-  const result = spawnSync(electron, [__filename], {
+  const result = spawnSync(electron, [__filename, ...process.argv.slice(2)], {
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
     stdio: 'inherit',
   });
@@ -25,8 +25,11 @@ if (!process.versions.electron) {
   const floor = patchedNode[major];
   const nodeHasOctoberFixes = Boolean(floor) && (minor > floor[0] || (minor === floor[0] && patch >= floor[1]));
   if (!nodeHasOctoberFixes) {
-    // Warn instead of failing: no Electron release ships a patched Node yet.
+    // Development checks disclose exposure; publishing must use the strict gate.
     console.log(`::warning::Electron ${process.versions.electron} embeds Node ${process.versions.node}, which predates the 2026-10-21 Node security release (Brotli CVE-2026-111497, TLS hostname checks). Upgrade Electron once a release embeds Node 24.22.1 or later.`);
+  }
+  if (process.argv.includes('--require-patched-node')) {
+    assert.ok(nodeHasOctoberFixes, 'Publishing blocked: Electron embeds a Node version missing the October 2026 security fixes.');
   }
   const zlib = require('node:zlib');
   const input = Buffer.from(Array.from({ length: 131072 }, (_, i) => i % 251));

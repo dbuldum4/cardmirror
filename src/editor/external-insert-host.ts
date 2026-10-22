@@ -42,10 +42,10 @@ interface InsertRequest {
   target?: string;
   /** Cite-emphasis substrings (role `cite`) — see ExternalInsertOpts. */
   citeTokens?: string[];
-  /** Rich payload: CardMirror-native (or arbitrary) HTML. When present
+  /** Rich payload: CardMirror Advanced-native (or arbitrary) HTML. When present
    *  and it parses to usable content, it supersedes `text`/`role`/
    *  `citeTokens`; unusable html falls back to the text path — the
-   *  same rendering an older CardMirror (which never reads this
+   *  same rendering an older CardMirror Advanced (which never reads this
    *  field) produces. */
   html?: string;
 }
@@ -124,7 +124,7 @@ function handle(req: InsertRequest, opts: ExternalInsertHostOpts): InsertResult 
     }
     // Rich path first: valid html that parses to content wins; anything
     // else falls through to the text path (identical to how an older
-    // CardMirror, which never reads `html`, renders this payload).
+    // CardMirror Advanced, which never reads `html`, renders this payload).
     if (
       typeof req.html === 'string' &&
       req.html.length > 0 &&

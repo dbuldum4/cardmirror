@@ -73,7 +73,7 @@ interface InsertPayload {
   target?: unknown;
   /** Rich payload (schema-2+, additive): HTML the renderer parses
    *  through the document schema. Optional both directions — an older
-   *  CardMirror ignores it and renders `text`; a sender that omits it
+   *  CardMirror Advanced ignores it and renders `text`; a sender that omits it
    *  behaves exactly as before. */
   html?: unknown;
 }
@@ -199,7 +199,7 @@ function focusedRenderTarget(): BrowserWindow | null {
 }
 
 /** The most recently focused DOC window — the insert target while
- *  CardMirror is in the background. The two client styles differ: FDP
+ *  CardMirror Advanced is in the background. The two client styles differ: FDP
  *  activates its picked window before calling (focus IS how its target
  *  picker's choice travels — the wire has no window addressing), while
  *  ebb deliberately sends without activating (a flow app must not
@@ -584,7 +584,7 @@ async function handleRequest(
         ok: false,
         error: 'unidentified',
         message:
-          'This CardMirror requires apps to identify themselves with an X-App-Id header. Update the sending app.',
+          'This CardMirror Advanced requires apps to identify themselves with an X-App-Id header. Update the sending app.',
       });
       return;
     }
@@ -643,7 +643,7 @@ async function handleRequest(
         ok: false,
         error: 'unidentified',
         message:
-          'This CardMirror requires apps to identify themselves with an X-App-Id header. Update the sending app.',
+          'This CardMirror Advanced requires apps to identify themselves with an X-App-Id header. Update the sending app.',
       });
       return;
     }
@@ -727,7 +727,7 @@ async function handleRequest(
         ok: false,
         error: 'unidentified',
         message:
-          'This CardMirror requires apps to identify themselves with an X-App-Id header. Update the sending app.',
+          'This CardMirror Advanced requires apps to identify themselves with an X-App-Id header. Update the sending app.',
       });
       return;
     }

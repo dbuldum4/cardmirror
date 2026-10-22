@@ -2,14 +2,14 @@
  * cardmirror-read — CLI entry.
  *
  * A tiny utility an AI assistant (or anyone) can run to get a
- * temporary, read-only, machine-readable copy of a CardMirror `.cmir`
+ * temporary, read-only, machine-readable copy of a CardMirror Advanced `.cmir`
  * or Word `.docx` file — without the app, without a display, without
  * write access to the original.
  *
  *   node cardmirror-read.cjs <file> [--form text|json] [--stdout] [--out PATH]
  *
  *   --form text   (default) markdown-flavored plain text
- *   --form json   uncompressed CardMirror JSON envelope (full fidelity)
+ *   --form json   uncompressed CardMirror Advanced JSON envelope (full fidelity)
  *   --stdout      print the content instead of writing a temp file
  *   --out PATH    write to PATH instead of a temp file
  *

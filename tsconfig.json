@@ -3,7 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -18,7 +22,17 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-    "types": ["node", "vitest/globals"]
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
   },
-  "include": ["src/**/*", "tests/**/*", "benchmarks/**/*", "vitest.config.ts", "vite.config.ts"]
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "bin/**/*",
+    "benchmarks/**/*",
+    "vitest.config.ts",
+    "vite.config.ts"
+  ]
 }

@@ -3,8 +3,8 @@
  * filename + format + export options, or `null` if they cancelled.
  *
  * Two output formats:
- *   - `cmir` — CardMirror native (lossless JSON, no Verbatim round-
- *     trip). Recommended for docs that live entirely in CardMirror.
+ *   - `cmir` — CardMirror Advanced native (lossless JSON, no Verbatim round-
+ *     trip). Recommended for docs that live entirely in CardMirror Advanced.
  *   - `docx` — Microsoft Word / Verbatim. Use for sharing with
  *     teammates still on Verbatim, or for any tournament-day round
  *     where the receiving party needs Word.
@@ -47,7 +47,7 @@ export interface SaveAsResult {
    *  include-* options above. */
   readMode: boolean;
   /** Bake the private note layer into the file as real comments. Off by
-   *  default — notes are private and normally never leave CardMirror. */
+   *  default — notes are private and normally never leave CardMirror Advanced. */
   includeNotes: boolean;
   /** Bake the private AI-thread layer into the file as real comments.
    *  Off by default, same rationale as notes. */
@@ -78,12 +78,12 @@ export function openSaveAs(opts: OpenSaveAsOptions): Promise<SaveAsResult | null
 }
 
 const FORMAT_LABELS: Record<SaveAsFormat, string> = {
-  cmir: 'CardMirror native (.cmir)',
+  cmir: 'CardMirror Advanced native (.cmir)',
   docx: 'Microsoft Word (.docx)',
 };
 
 const FORMAT_BLURBS: Record<SaveAsFormat, string> = {
-  cmir: 'Lossless. No conversion. Best for docs that stay in CardMirror.',
+  cmir: 'Lossless. No conversion. Best for docs that stay in CardMirror Advanced.',
   docx: 'For sharing with Verbatim users or any Word-based workflow.',
 };
 
@@ -283,7 +283,7 @@ class SaveAsModal {
     this.analyticsBox = this.buildCheckbox('Include analytics', true);
     this.undertagsBox = this.buildCheckbox('Include undertags', true);
     // Private annotation layers — off by default (they normally never
-    // leave CardMirror). Checking them bakes the notes / AI threads into
+    // leave CardMirror Advanced). Checking them bakes the notes / AI threads into
     // the saved file as real Word-style comments.
     this.notesBox = this.buildCheckbox('Include private notes (as comments)', false);
     this.aiThreadsBox = this.buildCheckbox('Include AI comments (as comments)', false);

@@ -4616,6 +4616,7 @@ export type RibbonCommandId =
   | 'openCutterGuidance'
   | 'createFlashcard'
   | 'manageFlashcards'
+  | 'checkDocument'
   | 'wordCountSelection'
   | 'openShortcutsReference'
   | 'startUiTour'
@@ -4725,7 +4726,7 @@ export type RibbonCommandId =
   // Minimize item routes through this same command so its accelerator
   // follows user rebinds (Mod-m default restores the stock Cmd+M).
   | 'minimizeWindow'
-  // Jump to another CardMirror window by typing its name (the `w `
+  // Jump to another CardMirror Advanced window by typing its name (the `w `
   // palette source). In the three-pane workspace, the focused slot's
   // doc switcher instead — there the "windows" are the slot's docs.
   | 'switchWindow'
@@ -4885,6 +4886,7 @@ export const RIBBON_COMMAND_IDS: RibbonCommandId[] = [
   'openCutterGuidance',
   'createFlashcard',
   'manageFlashcards',
+  'checkDocument',
   'wordCountSelection',
   'openShortcutsReference',
   'startUiTour',
@@ -5099,6 +5101,7 @@ export const RIBBON_COMMAND_LABELS: Record<RibbonCommandId, string> = {
   openCutterGuidance: 'Edit File Cutting Guidance',
   createFlashcard: 'Create Flashcard From Selection',
   manageFlashcards: 'Manage Flashcards',
+  checkDocument: 'Check Document',
   wordCountSelection: 'Word Count Selection',
   openShortcutsReference: 'Open Keyboard Shortcuts',
   startUiTour: 'Take the UI Tour',
@@ -5312,6 +5315,7 @@ export const RIBBON_COMMAND_ALIASES: Partial<Record<RibbonCommandId, readonly st
   moveContainerUp: ['move up', 'move card up', 'move section up', 'reorder up', 'shift up'],
   moveContainerDown: ['move down', 'move card down', 'move section down', 'reorder down', 'shift down'],
   goHome: ['start screen', 'welcome screen', 'dashboard'],
+  checkDocument: ['document health', 'evidence check', 'missing citations', 'duplicates', 'lint'],
   openShortcutsReference: ['hotkeys', 'key bindings', 'shortcuts'],
   startUiTour: ['tour', 'onboarding', 'walkthrough', 'coach marks', 'tutorial'],
   zoomReset: ['actual size'],
@@ -5508,6 +5512,7 @@ export const DEFAULT_RIBBON_KEYS: Record<RibbonCommandId, string | string[]> = {
   openCutterGuidance: '',
   createFlashcard: '',
   manageFlashcards: '',
+  checkDocument: '',
   wordCountSelection: '',
   openShortcutsReference: '',
   startUiTour: '',
@@ -6444,6 +6449,12 @@ function commandFor(id: RibbonCommandId, ctx: RibbonContext): Command {
       return (_state, dispatch) => {
         if (!dispatch) return true;
         ctx.manageFlashcards();
+        return true;
+      };
+    case 'checkDocument':
+      return (_state, dispatch, view) => {
+        if (!view) return false;
+        if (dispatch) void import('./document-check-ui.js').then((m) => m.openDocumentCheck(view));
         return true;
       };
     case 'wordCountSelection':

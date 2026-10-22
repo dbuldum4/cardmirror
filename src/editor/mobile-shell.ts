@@ -124,7 +124,7 @@ function buildAppBar(): HTMLElement {
  *  open/save/dirty change; observing it avoids new exports. */
 function syncTitle(el: HTMLSpanElement): void {
   const apply = (): void => {
-    el.textContent = document.title.replace(/\s*[—-]\s*CardMirror\s*$/, '') || 'CardMirror';
+    el.textContent = document.title.replace(/\s*[—-]\s*CardMirror Advanced\s*$/, '') || 'CardMirror Advanced';
   };
   apply();
   const titleEl = document.querySelector('title');

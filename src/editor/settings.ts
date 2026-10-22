@@ -195,7 +195,7 @@ export { DEFAULT_PARAGRAPH_SPACING };
  * boxed, plus the box thickness. Each flag becomes a class toggle on
  * `#editor` (e.g. `pmd-emphasis-bold`); CSS rules predicated on the
  * class enable the typography. Defaults match Verbatim's, except
- * `emphasisBox` (true — CardMirror renders emphasis boxed by default).
+ * `emphasisBox` (true — CardMirror Advanced renders emphasis boxed by default).
  */
 /** Per-style text alignment (Accessibility → Text alignment).
  *  'default' = the style's normal start-aligned rendering; 'center' /
@@ -470,7 +470,7 @@ export interface Settings {
    *  a scrolling finger reads as a drag (iPad classroom request,
    *  2026-08-31). Sends/receives and pane resizing are unaffected. */
   dragInteractions: boolean;
-  /** When true (default), `New document` mounts the CardMirror
+  /** When true (default), `New document` mounts the CardMirror Advanced
    *  welcome / onboarding doc. When false, it mounts a blank
    *  doc — a single empty paragraph. The starter is the same one
    *  every fresh window opens with, so this also governs the
@@ -489,7 +489,7 @@ export interface Settings {
    *  path. */
   defaultSpeechDocFolder: string;
   /** Format that "New Speech Document" creates the doc in. `docx`
-   *  is the Verbatim-compatible default. `cmir` is CardMirror's
+   *  is the Verbatim-compatible default. `cmir` is CardMirror Advanced's
    *  native format — the only format that supports autosave (the
    *  background save path skips .docx because `toDocx` is too
    *  expensive to run on a debounce). */
@@ -1338,7 +1338,7 @@ export interface Settings {
    */
   condenseOnPaste: boolean;
   /** Smart paste conversion (default on): clipboard HTML recognized as
-   *  coming from Word or haku.cards is converted into CardMirror
+   *  coming from Word or haku.cards is converted into CardMirror Advanced
    *  structure — cards, cites, headings, named-style marks, highlights,
    *  numbering — via the docx importer's assembly path. Off, or when
    *  nothing recognizable is found, pastes behave exactly as before.
@@ -2336,7 +2336,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'lastWorkspaceEnabled',
     label: 'Remember my last workspace',
     description:
-      'Off by default. On, CardMirror remembers the documents open when you quit and lists them on the Home screen under Last workspace with a tick box each, so a whole working set comes back in one click; Save Workspace and Reopen Last Workspace work from the command bar too. Off, nothing is recorded and the section never appears. Desktop only.',
+      'Off by default. On, CardMirror Advanced remembers the documents open when you quit and lists them on the Home screen under Last workspace with a tick box each, so a whole working set comes back in one click; Save Workspace and Reopen Last Workspace work from the command bar too. Off, nothing is recorded and the section never appears. Desktop only.',
     kind: 'toggle',
     category: 'general',
     section: 'Workspace',
@@ -2672,7 +2672,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'showOnboardingStarter',
     label: 'Onboarding doc for new documents',
     description:
-      'When on (default), New Document opens the CardMirror welcome doc — the same starter you get the first time you launch. When off, New opens a blank doc with a single empty paragraph. Affects every freshly created doc, including newly spawned windows.',
+      'When on (default), New Document opens the CardMirror Advanced welcome doc — the same starter you get the first time you launch. When off, New opens a blank doc with a single empty paragraph. Affects every freshly created doc, including newly spawned windows.',
     kind: 'toggle',
     category: 'files',
     section: 'New documents',
@@ -2724,7 +2724,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'defaultSaveFormat',
     label: 'Default file format for new documents',
     description:
-      'Sets the format the Save-As dialog defaults to for a doc you haven\'t saved before. .docx is the default — Word- and Verbatim-compatible. Pick .cmir to make every new doc save in CardMirror\'s native format (lossless, and the only format that supports autosave). Doesn\'t affect existing files on disk — those always re-save in whatever format they were opened from.',
+      'Sets the format the Save-As dialog defaults to for a doc you haven\'t saved before. .docx is the default — Word- and Verbatim-compatible. Pick .cmir to make every new doc save in CardMirror Advanced\'s native format (lossless, and the only format that supports autosave). Doesn\'t affect existing files on disk — those always re-save in whatever format they were opened from.',
     kind: 'saveFormat',
     category: 'files',
     section: 'New documents',
@@ -3012,7 +3012,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'colorVisionFriendly',
     label: 'Color-vision friendly palette',
     description:
-      "Remaps the colors that carry meaning — annotation accents, voice-mode dots, prep-timer Aff/Neg, search-match highlights, category chips — onto a palette engineered to stay distinguishable under red-green and blue-yellow color-vision deficiencies (Okabe-Ito). Works with both light and dark themes. Any colors you set under Color overrides below still win. Note: this preset changes CardMirror's interface colors only — it does not recolor highlights or background colors stored in documents. For those, use 'Override highlight/background color in display' and 'Show highlight & background color names in the status bar' below.",
+      "Remaps the colors that carry meaning — annotation accents, voice-mode dots, prep-timer Aff/Neg, search-match highlights, category chips — onto a palette engineered to stay distinguishable under red-green and blue-yellow color-vision deficiencies (Okabe-Ito). Works with both light and dark themes. Any colors you set under Color overrides below still win. Note: this preset changes CardMirror Advanced's interface colors only — it does not recolor highlights or background colors stored in documents. For those, use 'Override highlight/background color in display' and 'Show highlight & background color names in the status bar' below.",
     kind: 'toggle',
     category: 'accessibility',
     aliases: ['colorblind', 'color blind', 'cvd', 'deuteranopia', 'protanopia', 'tritanopia'],
@@ -3076,7 +3076,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'accessibilityTreeEnabled',
     label: 'Screen reader support',
     description:
-      'Let screen readers and other assistive technology read CardMirror. OFF by default: a current Chromium bug crashes the whole window (white screen, lost work) while building the accessibility tree, so we disable it to keep CardMirror stable. Turn this on only if you rely on a screen reader — it re-activates the known crash. Takes effect after restarting CardMirror.',
+      'Let screen readers and other assistive technology read CardMirror Advanced. OFF by default: a current Chromium bug crashes the whole window (white screen, lost work) while building the accessibility tree, so we disable it to keep CardMirror Advanced stable. Turn this on only if you rely on a screen reader — it re-activates the known crash. Takes effect after restarting CardMirror Advanced.',
     kind: 'accessibilityRenderer',
     category: 'accessibility',
     electronOnly: true,
@@ -3718,7 +3718,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'smartPasteConversion',
     label: 'Smart paste conversion',
     description:
-      'Recognize content copied from Microsoft Word or haku.cards and convert it into CardMirror structure on paste — tags, cites, headings, underlining, and highlighting instead of unformatted text. Best effort: for full fidelity, open the .docx in CardMirror and copy from there. When off, or when the pasted content has no recognizable structure, pasting works exactly as before. Paste Text (F2) always pastes plain.',
+      'Recognize content copied from Microsoft Word or haku.cards and convert it into CardMirror Advanced structure on paste — tags, cites, headings, underlining, and highlighting instead of unformatted text. Best effort: for full fidelity, open the .docx in CardMirror Advanced and copy from there. When off, or when the pasted content has no recognizable structure, pasting works exactly as before. Paste Text (F2) always pastes plain.',
     kind: 'toggle',
     category: 'editing',
     section: 'Paste',
@@ -4328,7 +4328,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'pairingRelayUrl',
     label: 'Custom relay URL',
     description:
-      'Point card sharing at your own relay server instead of the official one — e.g. https://relay.example.com/relay. The relay server ships in the CardMirror repo\'s relay/ folder (see its README); everyone sharing cards must use the same relay. Leave empty for the official relay.',
+      'Configure your relay server to enable card sharing — e.g. https://relay.example.com/relay. The relay server ships in the CardMirror Advanced repo\'s relay/ folder (see its README); everyone sharing cards must use the same relay. Required for this fork; no hosted relay is configured by default.',
     kind: 'text',
     category: 'pairing',
     dependsOn: 'pairingEnabled',
@@ -4338,7 +4338,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'pairingRelayToken',
     label: 'Custom relay token',
     description:
-      "The RELAY_TOKEN configured on your self-hosted relay. Only used when a custom relay URL is set; stored locally on this machine. Leave empty when using the official relay.",
+      "The RELAY_TOKEN configured on your self-hosted relay. Only used when a custom relay URL is set; stored locally on this machine. Configure the same token on every participating machine.",
     kind: 'password',
     category: 'pairing',
     dependsOn: 'pairingEnabled',
@@ -4348,7 +4348,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'pluginsEnabled',
     label: 'Enable plugins',
     description:
-      'Load installed third-party plugins at startup. Plugins run with full access to CardMirror and your documents - install only plugins whose author you trust. Takes effect on the next launch.',
+      'Load installed third-party plugins at startup. Plugins run with full access to CardMirror Advanced and your documents - install only plugins whose author you trust. Takes effect on the next launch.',
     kind: 'toggle',
     category: 'plugins',
     electronOnly: true,
@@ -4360,7 +4360,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'externalInsertPolicy',
     label: 'Inserts from external apps',
     description:
-      'Local companion apps (like ebb or Fast Debate Paste) can insert text and jump to sources over the local bridge. "Ask for each app" (default) prompts the first time an app sends and remembers your answer below. "Allow all" accepts every sender — including older apps that don\u2019t identify themselves. "Block all" turns the whole surface off. This does not affect plugins running inside CardMirror.',
+      'Local companion apps (like ebb or Fast Debate Paste) can insert text and jump to sources over the local bridge. "Ask for each app" (default) prompts the first time an app sends and remembers your answer below. "Allow all" accepts every sender — including older apps that don\u2019t identify themselves. "Block all" turns the whole surface off. This does not affect plugins running inside CardMirror Advanced.',
     kind: 'externalInsertPolicy',
     category: 'plugins',
     section: 'External apps',
@@ -4374,7 +4374,7 @@ export const SETTING_METADATA: SettingMeta[] = [
     key: 'flowHostOnLaunch',
     label: 'Keep a Verbatim Flow connection warm',
     description:
-      'Start the background connection to Excel when CardMirror launches, so your first Send to Flow is fast instead of waiting a second or two for it to spin up. Leave off to start it on demand the first time you use a Flow command (every send after that is fast either way). You can also start it any time with the "Start Flow Connection" command.',
+      'Start the background connection to Excel when CardMirror Advanced launches, so your first Send to Flow is fast instead of waiting a second or two for it to spin up. Leave off to start it on demand the first time you use a Flow command (every send after that is fast either way). You can also start it any time with the "Start Flow Connection" command.',
     kind: 'toggle',
     category: 'plugins',
     section: 'Verbatim Flow',

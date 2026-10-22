@@ -2030,7 +2030,7 @@ function buildInstallInfoSection(): HTMLElement {
     const liteNote = document.createElement('div');
     liteNote.className = 'pmd-update-pause-desc';
     liteNote.textContent =
-      'CardMirror Lite never checks for updates or connects to the ' +
+      'CardMirror Advanced Lite never checks for updates or connects to the ' +
       'internet. To upgrade, install a newer Lite build from the ' +
       'releases page.';
     wrap.appendChild(liteNote);
@@ -2056,7 +2056,7 @@ function buildCrashDumpsSection(): HTMLElement | null {
   const desc = document.createElement('div');
   desc.className = 'pmd-settings-row-desc';
   desc.textContent =
-    'If CardMirror ever crashes, the system saves a diagnostic dump in this ' +
+    'If CardMirror Advanced ever crashes, the system saves a diagnostic dump in this ' +
     'folder. Attaching the newest file to a bug report helps pin down the ' +
     'cause — nothing is sent anywhere unless you share it yourself.';
   section.appendChild(desc);
@@ -2083,9 +2083,9 @@ function buildCrashDumpsSection(): HTMLElement | null {
 /** GitHub-hosted copies of the user-facing docs — opened from Settings → General
  *  (and, on macOS, the Help menu). Pinned in Settings so they stay reachable on
  *  Windows/Linux, which carry no native menu bar. */
-const MANUAL_URL = 'https://github.com/ant981228/cardmirror/blob/main/MANUAL.md';
-const PRIVACY_URL = 'https://github.com/ant981228/cardmirror/blob/main/PRIVACY.md';
-const TERMS_URL = 'https://github.com/ant981228/cardmirror/blob/main/TERMS.md';
+const MANUAL_URL = 'https://github.com/dbuldum4/cardmirror-advanced/blob/main/MANUAL.md';
+const PRIVACY_URL = 'https://github.com/dbuldum4/cardmirror-advanced/blob/main/PRIVACY.md';
+const TERMS_URL = 'https://github.com/dbuldum4/cardmirror-advanced/blob/main/TERMS.md';
 
 /** One external doc link. On desktop it routes through the host so it opens in
  *  the OS browser rather than a new Electron window; on web the anchor opens a
@@ -4625,7 +4625,7 @@ function buildSpeechDocFormatEditor(): HTMLElement {
   wrap.className = 'pmd-multi-doc-layout-mode-editor';
   const options: { value: 'docx' | 'cmir'; label: string }[] = [
     { value: 'docx', label: '.docx — Verbatim-compatible (default)' },
-    { value: 'cmir', label: '.cmir — CardMirror native (enables autosave)' },
+    { value: 'cmir', label: '.cmir — CardMirror Advanced native (enables autosave)' },
   ];
   const groupName = `pmd-speech-doc-format-${Math.random().toString(36).slice(2, 8)}`;
   for (const o of options) {
@@ -5311,14 +5311,14 @@ function buildAccessibilityRendererEditor(): HTMLElement {
       // The Chromium switch only applies at process start, so this needs a full
       // app restart. Offer to do it now; otherwise it applies next launch.
       const restartNow = await confirmDialog(
-        `Screen reader support will turn ${enabled ? 'on' : 'off'} after CardMirror restarts. Restart now?`,
+        `Screen reader support will turn ${enabled ? 'on' : 'off'} after CardMirror Advanced restarts. Restart now?`,
         { okLabel: 'Restart' },
       );
       if (restartNow) {
         void electron.relaunchApp();
       } else {
         showToast(
-          `Restart CardMirror to ${enabled ? 'enable' : 'disable'} screen reader support.`,
+          `Restart CardMirror Advanced to ${enabled ? 'enable' : 'disable'} screen reader support.`,
         );
       }
     });
@@ -5359,8 +5359,8 @@ function buildAccessibilityRendererEditor(): HTMLElement {
     status.textContent =
       appliedState !== null && appliedState !== cur
         ? cur
-          ? 'Restart CardMirror to turn screen reader support on.'
-          : 'Restart CardMirror to turn screen reader support off.'
+          ? 'Restart CardMirror Advanced to turn screen reader support on.'
+          : 'Restart CardMirror Advanced to turn screen reader support off.'
         : '';
   }
 
@@ -5832,7 +5832,7 @@ function buildSaveFormatEditor(): HTMLElement {
   wrap.className = 'pmd-multi-doc-layout-mode-editor';
   const options: { value: 'docx' | 'cmir'; label: string }[] = [
     { value: 'docx', label: '.docx — Word / Verbatim-compatible (default)' },
-    { value: 'cmir', label: '.cmir — CardMirror native (enables autosave)' },
+    { value: 'cmir', label: '.cmir — CardMirror Advanced native (enables autosave)' },
   ];
   const groupName = `pmd-save-format-${Math.random().toString(36).slice(2, 8)}`;
   for (const o of options) {
@@ -5864,7 +5864,7 @@ function buildDocTypeFormatEditor(key: 'sendDocFormat' | 'readDocFormat' | 'mark
   wrap.className = 'pmd-multi-doc-layout-mode-editor pmd-doc-type-format-editor';
   const options: { value: 'default' | 'docx' | 'cmir'; label: string }[] = [
     { value: 'docx', label: '.docx — Word / Verbatim-compatible (default)' },
-    { value: 'cmir', label: '.cmir — CardMirror native' },
+    { value: 'cmir', label: '.cmir — CardMirror Advanced native' },
     { value: 'default', label: 'Same as new documents' },
   ];
   const groupName = `pmd-doc-type-format-${key}-${Math.random().toString(36).slice(2, 8)}`;

@@ -120,7 +120,7 @@ describe('parseAllowlistResponse (server allowlist shape)', () => {
   });
   it('treats empty or malformed responses as failure, not block-everything', () => {
     // A server hiccup must fall back to cache/baked — never brick installs.
-    expect(parseAllowlistResponse({ repos: [] })).toBeNull();
+    expect(parseAllowlistResponse({ repos: [] })).toEqual(new Set());
     expect(parseAllowlistResponse({ repos: 'nope' })).toBeNull();
     expect(parseAllowlistResponse(null)).toBeNull();
     expect(parseAllowlistResponse('[]')).toBeNull();

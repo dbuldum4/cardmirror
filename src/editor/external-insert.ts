@@ -237,7 +237,7 @@ const STRIP_SELECTOR = 'script, style, template, iframe, object, embed, noscript
  * document (`document.implementation.createHTMLDocument` — scripts
  * never execute, resources never load), so only schema-valid content
  * survives: this is the same trust boundary as every user paste, and
- * CardMirror-native HTML (our own toDOM serialization, which is what
+ * CardMirror Advanced-native HTML (our own toDOM serialization, which is what
  * cooperating apps emit) round-trips at full fidelity by construction
  * — structure, highlight colors, cite/underline marks, everything.
  *
@@ -249,7 +249,7 @@ const STRIP_SELECTOR = 'script, style, template, iframe, object, embed, noscript
  *
  * Returns null when the html yields no usable content — the caller
  * falls back to the plain-text path, which is also what an OLDER
- * CardMirror does with the same payload (it never reads `html`), so
+ * CardMirror Advanced does with the same payload (it never reads `html`), so
  * sender behavior degrades identically across versions.
  */
 export function buildExternalRichInsertTransaction(

@@ -5,6 +5,7 @@
  * userData/plugins/<id>/ — one directory per plugin, next to the
  * legacy cardcutter.global.js FILE, which listInstalled skips.
  */
+import { readResponseTextBounded } from './bounded-response.js';
 import { app } from 'electron';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
@@ -83,7 +84,7 @@ export function validateManifest(
   if (typeof m.name !== 'string' || !m.name) return { ok: false, error: 'missing name' };
   if (typeof m.version !== 'string' || !m.version) return { ok: false, error: 'missing version' };
   if (m.apiVersion !== PLUGIN_API_VERSION) {
-    return { ok: false, error: `plugin needs apiVersion ${String(m.apiVersion)}; this CardMirror supports ${PLUGIN_API_VERSION}` };
+    return { ok: false, error: `plugin needs apiVersion ${String(m.apiVersion)}; this CardMirror Advanced supports ${PLUGIN_API_VERSION}` };
   }
   return { ok: true, manifest: m as PluginManifest };
 }
@@ -127,23 +128,24 @@ interface GithubRelease { tag_name: string; assets: GithubAsset[]; }
 
 async function fetchLatestRelease(owner: string, repo: string): Promise<GithubRelease | null> {
   const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
-    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cardmirror' },
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cardmirror-advanced' },
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return null;
-  return (await res.json()) as GithubRelease;
+  return JSON.parse(await readResponseTextBounded(res, 512 * 1024)) as GithubRelease;
 }
 
 async function downloadAsset(release: GithubRelease, name: string): Promise<string | null> {
   const asset = release.assets.find((a) => a.name === name);
   if (!asset) return null;
   const res = await fetch(asset.browser_download_url, {
-    headers: { 'User-Agent': 'cardmirror' },
+    headers: { 'User-Agent': 'cardmirror-advanced' },
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return null;
   const declared = Number(res.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > MAX_ASSET_BYTES) return null;
-  const text = await res.text();
-  if (text.length > MAX_ASSET_BYTES) return null;
+  const text = await readResponseTextBounded(res, MAX_ASSET_BYTES);
   return text;
 }
 
@@ -169,10 +171,8 @@ async function downloadAsset(release: GithubRelease, name: string): Promise<stri
  *      Confirmed-real repos ONLY — never a guessed slug (baked entries
  *      ship in binaries; the dedicated ebb-plugin repo doesn't exist
  *      yet, so its eventual slug is added on the RELAY when known).
- * A fetched list REPLACES the baked one (that's what makes revocation
- * possible), but an empty or malformed response reads as a failed
- * fetch, not as "block everything" — a server hiccup must not brick
- * the ebb install path.
+ * A fetched list REPLACES the baked one, including an explicit empty
+ * list to revoke every source. Malformed/unavailable responses use the cache.
  */
 export const PLUGIN_INSTALL_ALLOWLIST: ReadonlySet<string> = new Set([
   'shreerammodi/ebb',
@@ -190,7 +190,7 @@ export function setAllowlistRelayUrlSupplier(fn: () => string): void {
 }
 
 /** Parse a server allowlist response into a repo set, or null when the
- *  shape is wrong / empty (treated as fetch failure by the caller). */
+ *  shape is wrong. An explicit empty array revokes every install source. */
 export function parseAllowlistResponse(body: unknown): Set<string> | null {
   const repos = (body as { repos?: unknown } | null)?.repos;
   if (!Array.isArray(repos)) return null;
@@ -200,7 +200,7 @@ export function parseAllowlistResponse(body: unknown): Set<string> | null {
       out.add(r.trim().toLowerCase());
     }
   }
-  return out.size > 0 ? out : null;
+  return repos.length === 0 || out.size > 0 ? out : null;
 }
 
 function allowlistCachePath(): string {
@@ -217,7 +217,7 @@ async function fetchServerAllowlist(): Promise<Set<string> | null> {
       clearTimeout(timer),
     );
     if (!res.ok) return null;
-    return parseAllowlistResponse(await res.json());
+    return parseAllowlistResponse(JSON.parse(await readResponseTextBounded(res, 128 * 1024, ALLOWLIST_FETCH_TIMEOUT_MS)));
   } catch {
     return null;
   }
@@ -291,7 +291,7 @@ export async function fetchPluginDirectory(): Promise<
       clearTimeout(timer),
     );
     if (!res.ok) return { ok: false, error: `The plugin directory answered ${res.status}.` };
-    raw = await res.json();
+    raw = JSON.parse(await readResponseTextBounded(res, 256 * 1024, ALLOWLIST_FETCH_TIMEOUT_MS));
   } catch {
     return { ok: false, error: 'Could not reach the plugin directory. Are you online?' };
   }
@@ -387,7 +387,7 @@ export async function inspectFromGithub(
   const v = validateManifest(manifestObj);
   if (!v.ok) return { ok: false, error: v.error };
   if (v.manifest.minAppVersion && compareVersions(app.getVersion(), v.manifest.minAppVersion) < 0) {
-    return { ok: false, error: `This plugin needs CardMirror ${v.manifest.minAppVersion} or newer.` };
+    return { ok: false, error: `This plugin needs CardMirror Advanced ${v.manifest.minAppVersion} or newer.` };
   }
   const collision = checkInstallCollision(await readInstalledManifest(v.manifest.id), ownerRepo);
   if (collision) return { ok: false, error: collision };
@@ -445,7 +445,7 @@ export async function listInstalled(): Promise<InstalledPluginInfo[]> {
       const v = validateManifest(JSON.parse(raw));
       if (!v.ok || v.manifest.id !== e.name) continue;
       // The version gate applies at load too, not just install: an app
-      // downgrade must not boot a plugin built for a newer CardMirror.
+      // downgrade must not boot a plugin built for a newer CardMirror Advanced.
       // Incompatible installs are LISTED (flagged) rather than hidden —
       // hidden, the plugin silently vanishes from the settings tab, which
       // reads as data loss and leaves no way to uninstall it. The load

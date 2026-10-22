@@ -1,6 +1,8 @@
-# CardMirror User Manual
+> **Fork edition:** See [MIGRATION.md](./MIGRATION.md) for profile, sharing, input-limit, and release differences. The editor layout and shortcuts remain familiar.
 
-CardMirror is an editor for competitive debate evidence. It reads and
+# CardMirror Advanced User Manual
+
+CardMirror Advanced is an editor for competitive debate evidence. It reads and
 writes the same Microsoft Word `.docx` files as
 [Verbatim](https://paperlessdebate.com) — same Pocket / Hat / Block / Tag
 structure, same F-key shortcuts, same send-to-speech workflow — but it's
@@ -8,7 +10,7 @@ a standalone app, so you don't need Word, macros, or an add-in. It runs
 on Windows, macOS, and Linux, and in any modern browser.
 
 This manual covers the whole editor. If you already know Verbatim, most
-of it will feel familiar; skip to **[New in CardMirror](#new-in-cardmirror)**
+of it will feel familiar; skip to **[New in CardMirror Advanced](#new-in-cardmirror-advanced)**
 for the parts that aren't.
 
 > Throughout this manual, **Mod** means the platform's main modifier key:
@@ -44,10 +46,10 @@ for the parts that aren't.
 
 ## 1. Getting started
 
-### Installing CardMirror
+### Installing CardMirror Advanced
 
 Download the desktop app for your operating system from the
-[Releases page](https://github.com/ant981228/cardmirror/releases), or try
+[Releases page](https://github.com/dbuldum4/cardmirror-advanced/releases), or try
 the [live web preview](https://cardmirror.app/) in a
 browser. Full install instructions — including the one-time "unsigned
 app" prompts on Windows and macOS — are in the project README.
@@ -58,7 +60,7 @@ defense.
 
 ### Desktop vs. web
 
-You can run CardMirror two ways:
+You can run CardMirror Advanced two ways:
 
 - **Desktop app** (recommended for tournaments). Fully offline, reads and
   writes files directly on your disk, supports autosave and crash
@@ -69,7 +71,7 @@ You can run CardMirror two ways:
   desktop experience.
 
 **Installing the web edition as an app (Chrome / Edge / ChromeOS).** Open
-it and click the **Install** button in the address bar to run CardMirror in
+it and click the **Install** button in the address bar to run CardMirror Advanced in
 its own window — offline, and updating itself when you relaunch. On a
 Chromebook, this is the best way to run it. Installed, the web app covers
 most of the desktop experience; what follows is only what still differs.
@@ -87,7 +89,7 @@ Features that work in only one edition are marked **(desktop only)** or
 **(web only)** throughout, so you'll find the specifics in each relevant
 section as you read.
 
-**The web edition has a mobile layout.** Open CardMirror in a phone or
+**The web edition has a mobile layout.** Open CardMirror Advanced in a phone or
 tablet browser — or any browser window narrower than about 768px — and
 it switches to a view-first **mobile layout**: a slim top bar, the
 document full-bleed, a **Read** button for read mode (tap the page to
@@ -95,9 +97,9 @@ drop or remove a reading marker), pinch-zoom, an outline drawer, and a
 touch-sized Settings page. **Use desktop layout** switches back to the
 full editor.
 
-### CardMirror Lite
+### CardMirror Advanced Lite
 
-**CardMirror Lite** is a third option, built for school-managed devices
+**CardMirror Advanced Lite** is a third option, built for school-managed devices
 whose IT policies restrict AI tools or network access. It's the same
 editor — same files, same shortcuts, same formatting engine — with the
 network-dependent features removed from the build entirely: no AI
@@ -105,7 +107,7 @@ features, no card sharing or co-editing, no account linking, no
 plugins, and no update checks. The web version at
 **lite.cardmirror.app** is locked down by a browser-enforced security
 policy so it cannot contact anything but its own address; the desktop
-version ("CardMirror Lite" installers on the releases page) blocks
+version ("CardMirror Advanced Lite" installers on the releases page) blocks
 network requests at the application level and installs alongside a
 standard copy without touching it.
 
@@ -118,14 +120,14 @@ build from the releases page when you want one.
 
 ### First launch and the welcome guide
 
-On a fresh install, CardMirror starts with a **guided UI tour**: a
+On a fresh install, CardMirror Advanced starts with a **guided UI tour**: a
 step-by-step spotlight over the interface — the editor, the style
 clusters, the outline, read mode, the timer, and a hands-on stop at the
 command bar. Step with the on-screen buttons or **← →**, skip with
 **Esc**, and rerun it whenever you like with the **Take the UI Tour**
 command (command bar).
 
-The first time you open CardMirror — and every time you press **New
+The first time you open CardMirror Advanced — and every time you press **New
 Document** — you also get an interactive welcome guide built out of real
 Pockets, Hats, cards, and analytics. It's a live document: type in it,
 press the shortcuts, and try things as you read. When you're done, turn
@@ -160,7 +162,7 @@ estimate (click it for details), the zoom controls, and — when there
 is something to report — the [notice chip](#the-notice-chip).
 
 <a id="new-in-cardmirror"></a>
-### New in CardMirror
+### New in CardMirror Advanced
 
 If you're coming from stock Verbatim, these are the new features. Each is
 covered in full in the section linked.
@@ -243,7 +245,7 @@ on the left gives you an outline you can fold, jump around, and reorder.
 
 ### Heading levels
 
-CardMirror uses Verbatim's four heading levels, each on a function key:
+CardMirror Advanced uses Verbatim's four heading levels, each on a function key:
 
 | Level | Style | Shortcut | Use it for |
 |-------|-------|----------|------------|
@@ -254,7 +256,7 @@ CardMirror uses Verbatim's four heading levels, each on a function key:
 
 Put the cursor in a paragraph and press the key to convert it. As in
 Verbatim, let the content dictate the structure — a short file might use
-only Blocks and Tags. CardMirror is happy with files that skip levels or
+only Blocks and Tags. CardMirror Advanced is happy with files that skip levels or
 start partway down; you don't have to start with a Pocket.
 
 A single document can hold several "files" in a row, separated by blank
@@ -299,7 +301,7 @@ mirrors Word's Navigation Pane, but does more:
   search bar under the level buttons. As you type, headings that
   contain the search are highlighted right in the outline — even ones
   hidden by the level filter or a collapsed section. Options, which
-  CardMirror remembers:
+  CardMirror Advanced remembers:
   - **Level** — search **Pocket**, **Hat**, **Block** or **Tag**
     headings only, or **All** (the default).
   - **Hide non-matches** (on by default) — the outline shrinks to the
@@ -348,14 +350,14 @@ mirrors Word's Navigation Pane, but does more:
 
 ### Card numbering
 
-CardMirror can number your cards and substructure automatically — handy for
+CardMirror Advanced can number your cards and substructure automatically — handy for
 referring to e.g. "2AC 3" while you edit or read. Numbering is **display only**: it
 never changes your card text, and you can turn it off any time.
 
 Turn it on from the **numbering** cluster in the ribbon (or search "numbering"
-in the command bar). You mark which cards carry a number, mark which cards carry substructure, 
-and set where numbering starts over; CardMirror computes the numbers and keeps them 
-current as you reorder. The same numbers appear next to each card in the 
+in the command bar). You mark which cards carry a number, mark which cards carry substructure,
+and set where numbering starts over; CardMirror Advanced computes the numbers and keeps them
+current as you reorder. The same numbers appear next to each card in the
 **navigation pane**, so the outline reads like your speech doc.
 
 You can also number straight from the outline: **Shift-click or Ctrl/Cmd-click
@@ -365,11 +367,11 @@ once, and the selection stays put so you can toggle again. The **restart
 toggle** works the same way: select several **blocks** in the
 outline and hit restart to flip them all to "continue", so arguments
 separated by blocks number consecutively straight through (press again to
-restore the per-block restarts). 
+restore the per-block restarts).
 
 While numbering is on, a block whose count **continues** from the block
 above shows a small grey **↓** at the right edge of its heading. No glyph
-means the default: the count restarts at that block. 
+means the default: the count restarts at that block.
 
 Tune how they look in **Settings → Appearance → Card numbering**: independent
 formats for the number and its substructure, the separator between them (period,
@@ -403,7 +405,7 @@ Two caveats:
   (**Underline**, **Emphasis**, **Cite**). Some **do nothing** when there's no selection
   (**Highlight**), since that's text you would normally select on purpose.
 
-CardMirror extends this selection-awareness to more commands than
+CardMirror Advanced extends this selection-awareness to more commands than
 Verbatim does, but the model should feel familiar. The per-command notes
 below say which fallback applies where it matters.
 
@@ -425,10 +427,10 @@ subscript: superscript has a shortcut, **Mod-Shift-=**; subscript is unbound by 
 ### Paste Text (F2)
 
 Use **F2** instead of Ctrl/Cmd-V when pasting card text from a webpage or
-PDF — this strips the source's styles, which will otherwise bloat your file. 
+PDF — this strips the source's styles, which will otherwise bloat your file.
 On the desktop app and in Chromium browsers (Chrome /
 Edge / ChromeOS) F2 pastes immediately — the web edition reads the
-clipboard directly, so the first time it's used it will ask for permission. 
+clipboard directly, so the first time it's used it will ask for permission.
 **(Web only:)** where the browser won't grant clipboard
 access — including Firefox and Safari — F2 falls back to *arming* plain
 paste: the status bar shows a pill, and your next Ctrl/Cmd-V pastes as
@@ -440,12 +442,12 @@ pasted text is condensed as it lands.
 <a id="smart-paste"></a>
 ### Copying into other apps
 
-A copy from CardMirror carries its look with it. Paste into an email,
+A copy from CardMirror Advanced carries its look with it. Paste into an email,
 Google Docs, or Word and the tags, cites, underlining, emphasis boxes,
 highlights, colors, sizes, and your body font arrive as they showed on
 your screen — frozen to your Appearance settings at the moment you
 copied (in light colors, even if you work in dark mode). Pasting back
-into CardMirror is unaffected: the same content, marks and structure as
+into CardMirror Advanced is unaffected: the same content, marks and structure as
 always, in this version or an older one. Plain-text pastes are
 unchanged. The one thing that does not travel is bold that comes from
 a style rather than the Bold mark — tags, cites, analytics — which
@@ -454,7 +456,7 @@ shows only where the receiving app bolds headings on its own.
 ### Smart paste from Word and haku.cards
 
 A regular Ctrl/Cmd-V of content copied from Microsoft Word (including
-Verbatim files) or from haku.cards is converted into real CardMirror
+Verbatim files) or from haku.cards is converted into real CardMirror Advanced
 structure — tags, cites, headings, underlining, emphasis, highlighting,
 and card numbering — instead of arriving as unformatted text. Content
 with no recognizable structure pastes exactly as before, and F2 still
@@ -464,7 +466,7 @@ Editing → Paste (on by default).
 Know its place: smart paste is a best-effort convenience working from
 the clipboard's HTML rendition of the source, and it is deliberately
 not built to handle every edge case. When fidelity matters — or when a
-paste comes out wrong — **open the .docx in CardMirror and copy from
+paste comes out wrong — **open the .docx in CardMirror Advanced and copy from
 there**: the real importer reads the actual document and may do
 better.
 
@@ -501,8 +503,8 @@ the web edition can't read the clipboard on a keypress.
 
 ### Autocorrect: quotes, dashes, replacements, and capitalization
 
-CardMirror ships a family of Word-style autocorrects: all fire as you type and 
-every conversion is reversible with **Backspace** right after it fires. 
+CardMirror Advanced ships a family of Word-style autocorrects: all fire as you type and
+every conversion is reversible with **Backspace** right after it fires.
 
 - **Smart quotes** (Settings → Editing → "Smart quotes") curl a straight `'` or
   `"` to the right direction as you type — opening after a space, dash, bracket,
@@ -617,13 +619,13 @@ the markers stay full size. Press **Mod-8** again to keep cycling smaller.
 
 ### Colors: highlight, background, and font color
 
-CardMirror directly supports both **highlighting** and **background
+CardMirror Advanced directly supports both **highlighting** and **background
 color**. Highlighting and background color appear the same but operations
 affecting one don't affect the other, allowing you to perform bulk edits on
 your document that leave some things unaffected. (If you'd like to tell
 them apart at a glance, **Settings → Appearance → Distinguish background
 color from highlighting** adds a subtle display-only cue.) As an example, you might
-want to recut an opponent's card and keep their highlighting for reference, but 
+want to recut an opponent's card and keep their highlighting for reference, but
 distinguish your own highlighting pass; you can do this by
 turning their highlighting into background color so it isn't affected by
 "standardize highlighting" in the future.
@@ -744,7 +746,7 @@ Formatting Gaps**, **Link URLs**, and **Remove Hyperlinks**. **Select Similar
 Formatting** selects everything that matches the cursor's styles.
 
 When you apply formatting to a word right next to an already-formatted word,
-CardMirror automatically bridges the small gap between them so the styling reads
+CardMirror Advanced automatically bridges the small gap between them so the styling reads
 as continuous. Two Settings → Editing controls govern this: a toggle to turn the
 automatic bridging on or off (the manual **Fix Formatting Gaps** command above is
 unaffected), and a choice of which gaps it bridges — **whitespace and
@@ -764,7 +766,7 @@ for pulling a key phrase up into an undertag. A Settings → Editing toggle,
 the excerpt is quoted.
 
 Verbatim's other bulk cleanup macros (AutoNumberTags,
-ConvertToDefaultStyles, and the rest) aren't in CardMirror.
+ConvertToDefaultStyles, and the rest) aren't in CardMirror Advanced.
 ReformatAllCites has an AI counterpart — see **Reformat Every Cite**
 under [AI features](#13-ai-features).
 
@@ -797,14 +799,14 @@ Settings → Keybindings.
 
 ## 4. Editing structure
 
-CardMirror follows Word's keyboard and mouse conventions for moving
+CardMirror Advanced follows Word's keyboard and mouse conventions for moving
 around and selecting text, and — because it knows what a card *is* —
 editing around a card's edges behaves predictably instead of letting you
 create half-formed structures.
 
 ### Moving the cursor
 
-Alongside the usual arrow keys, CardMirror has Word-style jumps. Use
+Alongside the usual arrow keys, CardMirror Advanced has Word-style jumps. Use
 **Ctrl** on Windows/Linux or **Alt/Option** on macOS — both work
 everywhere:
 
@@ -869,7 +871,7 @@ Mouse selection mirrors Word too:
 A document that lives in a Dropbox, OneDrive, Google Drive or iCloud
 folder shows a **cloud pill** in the bottom-right corner of the editor,
 the mirror of the Send and Receive pills on the left, labelled with the
-service's name. It means CardMirror is watching the file on disk, as of
+service's name. It means CardMirror Advanced is watching the file on disk, as of
 the last sync. If the file changes underneath you, because a teammate
 saved it on another machine, the pill turns amber and says how long
 ago. Nothing pops up, so a conflict never interrupts a speech; the pill
@@ -932,7 +934,7 @@ them.
 ### Indenting
 
 **Tab** and **Shift-Tab** indent and outdent the current block (or
-selection) by one step. Indentation doesn't change a heading's outline level. 
+selection) by one step. Indentation doesn't change a heading's outline level.
 (Inside a table, Tab moves between cells.)
 
 ### Drag-and-drop
@@ -953,7 +955,7 @@ panes copies the content into the other document.
 
 To reorder by keyboard, put your cursor in a card or section and press
 **Mod-Alt-↑** or **Mod-Alt-↓** — the **Move Container Up** / **Move Container
-Down** commands. CardMirror grabs the smallest outline item enclosing your
+Down** commands. CardMirror Advanced grabs the smallest outline item enclosing your
 cursor — a card or analytic unit, or a heading together with its whole section —
 and slides it one spot among its same-level neighbors in the navigation pane.
 Cards reorder among cards, blocks among blocks, and so on; nudging past the edge
@@ -993,7 +995,7 @@ it off may help.
 
 ### The Search Everything palette (Mod-Shift-Space)
 
-A single floating box that searches across everything CardMirror knows
+A single floating box that searches across everything CardMirror Advanced knows
 about — your Quick Cards, the dropzone, every command, every setting, and
 your files — and acts on what you pick. It opens centered over the active
 pane with results listed above the bar; **↑/↓** move the selection,
@@ -1013,7 +1015,7 @@ you *browse* that whole source.
 | **`s`** | **Settings** — both the section tabs and individual settings | Opens that tab and scrolls to the setting |
 | **`f`** | Your **files** by filename *(desktop only)* | Opens the file |
 | **`/`** | Your **file-search folders**, to browse *(desktop only)*; `/c` starts in the current document's folder | Steps into a folder, or opens the file |
-| **`w`** | Your other open **CardMirror windows**, most recently used first *(desktop only)* | Brings that window to the front |
+| **`w`** | Your other open **CardMirror Advanced windows**, most recently used first *(desktop only)* | Brings that window to the front |
 
 Searching **version** (or "about this install") shows the running app
 version, and Enter jumps to the About this install section of Settings.
@@ -1026,7 +1028,7 @@ the row, hovering it shows the full text in a tooltip.
 **Inserting evidence.** Quick-card, dropzone, and in-file results drop in
 at your cursor (the same insertion the send-to-speech and Quick Card
 buttons use). If your cursor is in the middle of a paragraph, the insertion
-will drop at the nearest valid target. 
+will drop at the nearest valid target.
 
 **Diving into a file (`f`, desktop only).** Press **Tab** on a selected file
 — or right-click any file — to dive *into* it without leaving the palette.
@@ -1089,7 +1091,7 @@ so you can narrow cards by topic.
 
 Quick Cards are a personal library of reusable snippets — a stock card, a
 standard overview, an analytic you paste constantly. Unlike Verbatim's
-shortcut-word system, CardMirror's are tagged and searchable, and they're
+shortcut-word system, CardMirror Advanced's are tagged and searchable, and they're
 available from **any window**.
 
 - **Add** — select content and choose **Add** in the Quick Cards group
@@ -1104,7 +1106,7 @@ available from **any window**.
 
 ## 7. The multi-doc workspace
 
-Verbatim shows you one document at a time. CardMirror can show up to **three
+Verbatim shows you one document at a time. CardMirror Advanced can show up to **three
 editable panes side by side**, which makes assembling a speech,
 comparing files, and working on something while keeping something up for
 reference against a block practical without juggling windows.
@@ -1113,13 +1115,13 @@ reference against a block practical without juggling windows.
 
 Enable **Settings → General → Multi-doc workspace** and reload. With one
 document open it looks like a normal editor; the layout fills in
-as you open more. 
+as you open more.
 
 ### Working with slots
 
 - Each of the three slots is independent: its own outline section, its own
   footer word count (with its own **Σ** Word Count button), and its own
-  document history. Think of each slot as its own "document pile." 
+  document history. Think of each slot as its own "document pile."
 - **Mod-1 / Mod-2 / Mod-3** focus a slot; **Mod-Shift-1/2/3** move the
   active document into a slot.
 - **Expand** a slot to full width with **Mod-Shift-F**, and restore it
@@ -1180,7 +1182,7 @@ as [send-to-speech](#8-reading-and-delivering-a-speech).
 ### Read mode
 
 Click the **eye** in the ribbon (or bind a key to *Toggle Read Mode*) to
-enter read mode — CardMirror's version of Verbatim's invisibility, with
+enter read mode — CardMirror Advanced's version of Verbatim's invisibility, with
 two improvements:
 
 **Convert Cards to Read Mode** (command bar; also *zap card*) makes that
@@ -1309,7 +1311,7 @@ time for it: `Doc: 1,234 · Amy: 8:12 | Card: 42 · Amy: 0:31 | Left: 806
 · Amy: 5:20`. Only read-aloud text counts, same as every other readout,
 so trimming highlights lowers it. Select text and it measures from the
 **end** of the selection — a selection reads as "I've been through this
-much". It's cheap on large files too: CardMirror keeps a running total
+much". It's cheap on large files too: CardMirror Advanced keeps a running total
 per section of the document, so moving the cursor only re-counts the
 card or paragraph it lands in.
 
@@ -1352,7 +1354,7 @@ display**, **Start / Pause** (▶), three **speech preset** buttons, and the
 - **Pop the timer out** *(desktop)*. The **⇱** button moves the timer into a
   small floating window that stays on top of every app — handy for keeping
   speech and prep time in view while reading a speech doc or anything else.
-  While popped out, the timer leaves the CardMirror ribbon entirely (it is
+  While popped out, the timer leaves the CardMirror Advanced ribbon entirely (it is
   never in both places); the float drives the same shared clocks, and its **⇲**
   button — or closing the float, or hiding the timer from any window — pops it
   back in. Drag anywhere on the float to move it. The timer always starts a
@@ -1362,7 +1364,7 @@ display**, **Start / Pause** (▶), three **speech preset** buttons, and the
   An accessibility option that plays a short beep at each alert point and a
   distinct double beep when time runs out. Exactly one sound plays no matter
   how many windows are open — the popped-out timer included — and the beeps
-  stay on time even when CardMirror is buried behind other apps. Volume is
+  stay on time even when CardMirror Advanced is buried behind other apps. Volume is
   adjustable.
 
 - **Prep clocks.** Click **Aff** or **Neg** to run that side's prep; each keeps
@@ -1399,7 +1401,7 @@ display**, **Start / Pause** (▶), three **speech preset** buttons, and the
 
 **Arrange Windows** (Speech group; unbound by default — give it a key under
 Settings → Keyboard shortcuts) does what Verbatim's Window Arranger did: the
-speech doc's window takes one side of the screen and every other CardMirror
+speech doc's window takes one side of the screen and every other CardMirror Advanced
 window takes the other side, all full height, the others stacked exactly on
 top of one another so you flip between them without hunting. The window you
 ran it from stays in front. **Settings → General → Workspace** sets which side
@@ -1431,12 +1433,12 @@ slots never marks it.
 ### Switching windows
 
 **Switch Window** (**Ctrl+Tab** by default, on macOS too) opens the Search
-Everything palette on your other CardMirror windows — the `w` prefix — with
+Everything palette on your other CardMirror Advanced windows — the `w` prefix — with
 the one you were in most recently at the top. Press **Enter** to go straight
 back to it, or type part of a document's name to jump to that window. Press
 **Ctrl+Tab** again while the list is open to move down it (**Ctrl+Shift+Tab**
 moves up). A minimized window is restored. It's the quick way between windows
-where the operating system's Alt+Tab mixes CardMirror in with every other app.
+where the operating system's Alt+Tab mixes CardMirror Advanced in with every other app.
 Desktop only.
 
 In the three-pane workspace, Ctrl+Tab keeps its existing job there: it cycles
@@ -1484,13 +1486,13 @@ or in one keystroke with **Save Send Doc (Mod-Alt-S)**.
 
 ### Saving marked cards
 
-To send a copy of just the cards you marked in your speech, use **Save Marked Cards** 
-— it pulls just those cards out and saves them on their own, in the format you set 
-for marked cards (Settings → Files → *Marked Cards format*; `.docx` by default). 
-Two ways in: a **Marked Doc** button in the Save As dialog, and a **Save Marked Cards** 
-command (default **Mod-Alt-M**, rebindable) that saves silently to a destination you 
-choose under Settings → *Marked Cards destination* (the source file's folder, or a 
-fixed folder), using the `MARKED_` filename prefix and the Marked Cards format — mirroring 
+To send a copy of just the cards you marked in your speech, use **Save Marked Cards**
+— it pulls just those cards out and saves them on their own, in the format you set
+for marked cards (Settings → Files → *Marked Cards format*; `.docx` by default).
+Two ways in: a **Marked Doc** button in the Save As dialog, and a **Save Marked Cards**
+command (default **Mod-Alt-M**, rebindable) that saves silently to a destination you
+choose under Settings → *Marked Cards destination* (the source file's folder, or a
+fixed folder), using the `MARKED_` filename prefix and the Marked Cards format — mirroring
 Save Send Doc. It keeps cards only (analytics and headings are dropped); if nothing is marked,
 it does nothing and tells you so. Card numbers are frozen into the saved copy as text (see
 [Send Doc](#16-saving-and-file-formats)), so the marked cards keep the numbers they had.
@@ -1518,7 +1520,7 @@ edition's mobile layout has neither.
 3. To cooperate just once, run the **Start Collaboration Session** command from
    the command bar. This will copy a document code to your clipboard. Anyone you
    share this code with will be able to collaborate on your document by running the
-   **Join or Rejoin Collaboration Session** command and pasting the code. 
+   **Join or Rejoin Collaboration Session** command and pasting the code.
 4. Optional, all in the same settings section:
    - **Groups** — a named set of recipients; sending to a group sends to
      every member. The **↑ / ↓** arrows reorder recipients and groups, and
@@ -1606,15 +1608,15 @@ card stays in the pill.
 
 **Delivery:** cards arrive instantly over a live push connection, with a
 catch-up on every reconnect (waking from sleep included). Unretrieved cards
-are deleted from the relay after **three hours**. 
+are deleted from the relay after **three hours**.
 
 ### Co-editing
 
 Up to **10 people** can edit one document live — typing,
-cursors, and comments all sync, and simultaneous edits merge automatically. 
-The document belongs to the **host**; everyone else edits a synced copy, 
-and everyone keeps their copy when the session ends. A session is not a 
-permanent shared document: when the host ends it — or after about a week 
+cursors, and comments all sync, and simultaneous edits merge automatically.
+The document belongs to the **host**; everyone else edits a synced copy,
+and everyone keeps their copy when the session ends. A session is not a
+permanent shared document: when the host ends it — or after about a week
 idle — it's gone and participants retain local copies.
 
 **Invite from your recipients:** click the **Send** pill and press the
@@ -1638,7 +1640,7 @@ message until someone leaves. Offline edits queue and sync on reconnect
 changed the document). You can close the app entirely — the session is
 saved under **Sessions** on the home screen, and rejoining syncs your
 offline changes. If you saved your session copy to disk and later open
-that **file** while the session still exists, CardMirror asks whether to
+that **file** while the session still exists, CardMirror Advanced asks whether to
 **rejoin** (the document reconnects in place) or **leave** (the file
 becomes an independent copy) — editing the file outside a live session
 would otherwise split it into two diverging copies with the same name. Switching
@@ -1696,14 +1698,14 @@ differences:
   of your membership's machines. The link is stored in that browser
   profile, so a private/incognito window or clearing site data leaves
   it behind (relink to recover; the seat is reclaimed, not lost).
-- **Tabs coordinate.** With several CardMirror tabs open, incoming
+- **Tabs coordinate.** With several CardMirror Advanced tabs open, incoming
   cards arrive exactly once — whichever tab is leading receives for all
   of them, the same way the timer and send-to-speech already cooperate
   across tabs.
 
 Phones and small screens get the mobile layout, which has no
 collaboration; an invite link opened there explains it needs a
-computer. CardMirror Lite has no collaboration in either edition.
+computer. CardMirror Advanced Lite has no collaboration in either edition.
 
 ### Privacy and self-hosting
 
@@ -1723,7 +1725,7 @@ the official relay.
 
 ## 10. Live views and linked copies
 
-CardMirror can show one section of content in more than one place, kept
+CardMirror Advanced can show one section of content in more than one place, kept
 connected to its source. There are two flavors, and the difference is simple —
 **do you want a window that shows the original, or make a self-updating copy?**
 
@@ -1754,7 +1756,7 @@ connected to its source. There are two flavors, and the difference is simple —
 - **Insert Linked Copy from a File** — open the Search Everything palette, dive
   into the source file, land on a heading — or on a card's tag, to copy just
   that one card — and press **Mod-Enter**. The source
-  can be a `.cmir` or a Word `.docx`; for a Word file CardMirror adds a small,
+  can be a `.cmir` or a Word `.docx`; for a Word file CardMirror Advanced adds a small,
   invisible bookmark so it can find the section again (nothing else changes), and
   declines if it can't. *(Making and refreshing a copy from a file is
   desktop-only — it reads the other file from disk; in-document views and copies
@@ -1774,7 +1776,7 @@ source section** in the menu to jump there). Pressing **Enter** at the very
 bottom of a live view starts a new line just below it.
 
 **When the source moves on.** Separately from your own edits, a linked copy can
-drift because its *source* changed. CardMirror marks such a copy with a small
+drift because its *source* changed. CardMirror Advanced marks such a copy with a small
 colored **"source updated" dot** on the glyph (the menu says *Source has new
 content · Refresh to update*) — it
 checks when you open a document, periodically while it's idle, and on demand via
@@ -1787,7 +1789,7 @@ view never shows this — it's always current, so there's nothing to flag.
 **Refresh** (linked copies). *Refresh Linked Copy* (command bar, or the glyph
 menu) re-pulls the current source into the copy your cursor is in; *Refresh All
 Linked Copies* does the whole document behind one confirmation. If you've edited
-a copy, CardMirror confirms before overwriting your changes; if the source
+a copy, CardMirror Advanced confirms before overwriting your changes; if the source
 heading has been *emptied*, a refresh keeps your cached copy rather than blanking
 it.
 
@@ -1798,15 +1800,15 @@ offers Go to source section · Re-pick source · Unlink (freezes the current vie
 into editable cards and stops tracking) · Delete.
 
 **Nesting.** A linked copy can contain a live view (a static copy with a live
-window inside it — that's fine). Live views can even be nested and CardMirror
+window inside it — that's fine). Live views can even be nested and CardMirror Advanced
 resolves them recursively; if a view points back at itself through a chain, the
 cycle is detected and left out with a small notice.
 
 **Word (`.docx`) flattens everything.** Live views and linked copies only stay
-connected in CardMirror's own `.cmir` format. **Saving to Word flattens every
+connected in CardMirror Advanced's own `.cmir` format. **Saving to Word flattens every
 view and copy to plain cards and drops the link** — the content stays, but it
 stops being connected, and re-opening that `.docx` won't bring the links back.
-CardMirror warns you before any `.docx` save that would do this — including
+CardMirror Advanced warns you before any `.docx` save that would do this — including
 when you save while closing a document. Keep the working copy as `.cmir` if
 you want them live; export to `.docx` only for a hand-off.
 
@@ -1878,14 +1880,14 @@ to an **Unanchored** section at the bottom of the column, with a
 
 ## 12. Learn: spaced-repetition flashcards
 
-CardMirror can turn your evidence into spaced-repetition flashcards, so
-you can study your files. 
+CardMirror Advanced can turn your evidence into spaced-repetition flashcards, so
+you can study your files.
 
 The cards live **only on your machine** and never travel with a shared
 file — your study material stays yours. (The design and the research
 behind it are written up in the project's ARCHITECTURE doc.) On the
-desktop they are one file, `learn-store.json`, in CardMirror's data
-folder, shared by every window you have open; CardMirror keeps a backup
+desktop they are one file, `learn-store.json`, in CardMirror Advanced's data
+folder, shared by every window you have open; CardMirror Advanced keeps a backup
 of it once a day for two weeks in a `learn-store-backups` folder beside
 it, so a lost card can be recovered from yesterday's copy. In the
 browser they live in the site's local storage.
@@ -1934,14 +1936,14 @@ turn it off under Settings → Appearance → **Flashcards-due dot**.
 A handful of features call a large language model. They're **off by
 default** and require a key. Two providers are supported, chosen under
 **Settings → Comments & AI → AI provider**: **Anthropic** (the default —
-CardMirror talks straight to Anthropic's Claude, and picks a current model
+CardMirror Advanced talks straight to Anthropic's Claude, and picks a current model
 automatically) and **OpenRouter** (one account that can route to many
 models, including Claude).
 
 ### Setup (Anthropic, the default)
 
 You need an Anthropic API key — a personal access code that lets
-CardMirror talk to Claude on your behalf. It's separate from a Claude.ai
+CardMirror Advanced talk to Claude on your behalf. It's separate from a Claude.ai
 chat account, and there's no free API tier, so expect to put in a small
 amount of credit. If you've never made one, here's the whole process:
 
@@ -1950,13 +1952,13 @@ amount of credit. If you've never made one, here's the whole process:
    account and its billing are separate from any chat subscription).
 2. Add credit: find **Billing** (or **Plans & billing**) in the console
    and buy the minimum credit — a few dollars goes a very long way; a
-   typical CardMirror AI action costs a fraction of a cent, so $5 can
+   typical CardMirror Advanced AI action costs a fraction of a cent, so $5 can
    last a season. Without credit, requests are refused.
 3. Open the **API keys** page, click **Create key**, give it any name
-   (e.g. "CardMirror"), and **copy it immediately** — the full key
+   (e.g. "CardMirror Advanced"), and **copy it immediately** — the full key
    (it starts with `sk-ant-`) is shown only once. If you lose it, just
    delete that key and create a new one.
-4. In CardMirror, open **Settings → Comments & AI**, turn **AI
+4. In CardMirror Advanced, open **Settings → Comments & AI**, turn **AI
    features** on, and paste the key into the **Anthropic API key**
    field.
 
@@ -1974,7 +1976,7 @@ example `anthropic/claude-sonnet-4.6`). The model field is **required**:
 there is no built-in default, and AI features won't run until it's set.
 Two things to know:
 
-- CardMirror's prompts are written and tested against Claude. Other
+- CardMirror Advanced's prompts are written and tested against Claude. Other
   models generally work, but cite formatting, text repair, and table
   extraction are tuned for Claude — an `anthropic/…` model id is the
   safe choice.
@@ -1987,7 +1989,7 @@ Two things to know:
 
 Whichever provider you pick, the key is stored locally and sent directly
 to that provider when you trigger a feature — it doesn't pass through
-any CardMirror server. API keys are also stripped from settings exports,
+any CardMirror Advanced server. API keys are also stripped from settings exports,
 so sharing a settings file never shares a key. With AI off, every AI
 control is hidden, and AI features gray out cleanly when you're offline.
 
@@ -2010,7 +2012,7 @@ the cite-formatting prompt, and — on the Anthropic provider — point AI
 at a specific Claude model (**AI model (advanced)** — leave blank to use
 the model built into your release) in Settings → Comments & AI. If a
 model is ever retired, AI features show a message telling you to update
-CardMirror or set a newer model id there. On OpenRouter, the model is
+CardMirror Advanced or set a newer model id there. On OpenRouter, the model is
 whatever the **OpenRouter model** field says. **Max output tokens** caps
 how long AI replies can run (both providers); if you use a reasoning
 model, raise it — hidden thinking spends from the same budget, and too
@@ -2098,7 +2100,7 @@ activity lists are all customizable.
 ## 14. Send to Verbatim Flow
 
 **(Windows only. Experimental.)** With Excel open and a workbook whose name
-contains "Flow", CardMirror can push your work straight into Verbatim
+contains "Flow", CardMirror Advanced can push your work straight into Verbatim
 Flow. Commands send the selected tags, cites, or text into Flow's current
 column, pull the selected Flow cells back into your document, or open a new
 Flow from the Verbatim template. They drive Excel directly and need no
@@ -2109,13 +2111,13 @@ The **Send Headings to Flow** variants send only the heading-level labels
 navigation pane previews), not the whole bibliographic paragraph.
 
 **Keeping the connection warm.** The first time you use a Flow command in a
-session, CardMirror opens a background connection to Excel and keeps it
+session, CardMirror Advanced opens a background connection to Excel and keeps it
 open, so every send and pull after that is near-instant instead of pausing
 a second or more to reconnect. If you'd rather not wait on that first send
 mid-round, warm the connection ahead of time with the **Start Flow
 Connection** command, or turn on **"Keep a Verbatim Flow connection warm"**
 at the bottom of Settings → **Plugins** to open it automatically the moment
-CardMirror launches (it works regardless of the Enable plugins switch). The
+CardMirror Advanced launches (it works regardless of the Enable plugins switch). The
 connection closes when you quit.
 
 These commands aren't on the ribbon and have no default shortcuts — find
@@ -2144,7 +2146,7 @@ sends text, never audio.
 The speech engine and its recognition model are a **one-time download of
 about 650 MB** (10 MB of engine, 640 MB of model), not part of the
 installer, so the app stays small for the many people who never use voice.
-The first time you turn voice on, CardMirror asks to download them and
+The first time you turn voice on, CardMirror Advanced asks to download them and
 tells you when they're ready. If you'll be somewhere without a connection,
 download it ahead of time under **Settings → Accessibility → Voice
 recognition model**.
@@ -2152,12 +2154,12 @@ recognition model**.
 ### Turning it on
 
 **Alt-Shift-V** (Option-Shift-V on a Mac; rebindable) turns the microphone on. A
-**status pill** appears at the bottom right showing whether CardMirror is
+**status pill** appears at the bottom right showing whether CardMirror Advanced is
 listening, the current **mode** as a labeled badge (command / dictating /
 asleep), the armed **pen**, what it last heard, and a live input meter.
 Click the pill for a menu: pick a microphone, calibrate, or stop.
 
-While voice is on, CardMirror is always listening for **command words** —
+While voice is on, CardMirror Advanced is always listening for **command words** —
 there is no wake word and no key to hold. To park the mic without ending
 the session, say **`sleep`** and **`wake`** to resume; it also
 **auto-sleeps** after a stretch of silence (configurable) so a forgotten
@@ -2222,7 +2224,7 @@ mid-sentence self-corrections ("actually, make that…"), drops fillers,
 adds punctuation, and spells names to match the document. Only the
 transcript and a little nearby text are sent — never audio. Turn it off
 under Accessibility → Clean up dictation with AI; the raw transcript lands
-instead. It is off in CardMirror Lite.
+instead. It is off in CardMirror Advanced Lite.
 
 ### Calibrate to your voice
 
@@ -2253,7 +2255,7 @@ calibration, and the model download.
 
 Open a working file with **File → Open**, or from the Home screen's recents. On
 desktop you can also **drag a `.docx`, `.cmir`, or `.cmir-journal`** from your
-file manager onto any CardMirror window — the editor, the navigation pane, or the
+file manager onto any CardMirror Advanced window — the editor, the navigation pane, or the
 home screen — to open it, exactly like File → Open (including the unsaved-changes
 prompt, and focusing a copy that's already open). Other file types are ignored,
 and dragging cards around inside the editor is unaffected.
@@ -2266,14 +2268,14 @@ so **Ctrl-Tab** cycles through them; a slot's own Open button does the same
 without asking. In one-window-per-document mode each file gets its own window.
 
 **Reopening your last set of documents.** Turn on **Settings → General →
-Workspace → Remember my last workspace** (off by default) and CardMirror
+Workspace → Remember my last workspace** (off by default) and CardMirror Advanced
 remembers which files you had open when you last quit and lists them on the Home screen under
 **Last workspace**, each with a tick box. **Reopen** opens the ticked ones —
 untick the ones you don't want, or use **All** / **None** to flip the whole
 list. In the three-pane workspace each document goes back to the pane it was
 in; in single-document mode each gets its own window.
 
-CardMirror never reopens documents behind your back: a launch with no file
+CardMirror Advanced never reopens documents behind your back: a launch with no file
 lands on the Home screen, where the list is waiting, and nothing opens until
 you say so. Your ticks are remembered between sessions, so a document you
 untick stays unticked as the set changes from one session to the next until
@@ -2289,8 +2291,8 @@ Documents that have never been saved aren't included — there's no file to
 reopen — and one that has moved or been deleted is skipped with a note.
 
 **Password-protected Word files.** If you open a `.docx` that Word encrypted
-with a password, CardMirror asks for the password and opens it. Saving writes
-a normal, unencrypted file — CardMirror doesn't re-apply the password. (Only
+with a password, CardMirror Advanced asks for the password and opens it. Saving writes
+a normal, unencrypted file — CardMirror Advanced doesn't re-apply the password. (Only
 the modern Word encryption is supported; a file from very old Office versions
 will ask you to re-save it in a current Word first.)
 
@@ -2302,14 +2304,14 @@ focused document.
 
 ### Two formats
 
-- **`.cmir`** — CardMirror's native format. Lossless, and required for
+- **`.cmir`** — CardMirror Advanced's native format. Lossless, and required for
   autosave and crash recovery. Use it for your working files. Files are
   saved compressed (roughly 10× smaller than before) and open just as fast;
   any older uncompressed file shrinks automatically the next time you save
   it — no action needed.
-- **`.docx`** — Word/Verbatim format. Use it to share. CardMirror writes
+- **`.docx`** — Word/Verbatim format. Use it to share. CardMirror Advanced writes
   docx that's indistinguishable from Verbatim's own output; some
-  CardMirror-only extras (private notes, AI notes, flashcards) are left
+  CardMirror Advanced-only extras (private notes, AI notes, flashcards) are left
   out unless you opt in, and [live views and linked copies](#10-live-views-and-linked-copies) flatten
   to plain cards (their links don't survive Word).
 
@@ -2351,7 +2353,7 @@ its styles.
 
 This is the same idea as the **"Curing Stylepox"** cleaner described on
 [Debate Decoded](https://debate-decoded.ghost.io/leveling-up-your-debate-software-3-curing-stylepox/),
-but it runs entirely inside CardMirror. It's **much faster** and has **much
+but it runs entirely inside CardMirror Advanced. It's **much faster** and has **much
 better handling of old files**. It recognizes the common pre-Verbatim style
 conventions
 (`Tags` / `Cards` / `Cites` / `Block Headings`, `Author-Date`, `Debate
@@ -2360,7 +2362,7 @@ the standard styles when a document is missing them, and repairs `!!`-marked
 style names that older cleaners choke on — so it handles **many** old files
 cleanly, though not every one (unusual or one-off style schemes may still not
 be fully understood). The same applies when you simply **open** an old `.docx`
-in CardMirror: for files it recognizes, it reconstructs the cards, tags, cites,
+in CardMirror Advanced: for files it recognizes, it reconstructs the cards, tags, cites,
 and headings instead of importing flat text.
 
 ### Saving
@@ -2375,7 +2377,7 @@ and headings instead of importing flat text.
   on disk — hover over it for the reason. **(Desktop only.)**
 - **If a file (or its folder) gets renamed, moved, or deleted** while the
   document is open (say, someone reorganizes a shared Dropbox), the next
-  save can't find the old location. CardMirror will tell you what happened
+  save can't find the old location. CardMirror Advanced will tell you what happened
   and offer **Save As…** so you can put the document somewhere new —
   nothing is lost, and the app never silently recreates a file at the old
   location. The Save As dialog opens as close to the old location as still
@@ -2386,7 +2388,7 @@ and headings instead of importing flat text.
   **Save As…** (keep both), or cancel. Autosave never overwrites a file
   that changed underneath it; it pauses and tells you to use Save to
   review. **(Desktop only.)**
-- **Drag the file out of the app (desktop).** The CardMirror mark in the
+- **Drag the file out of the app (desktop).** The CardMirror Advanced mark in the
   bottom-right corner of the status bar stands for the focused document's
   file: drag it into Slack, Mail, Teams, Finder or Explorer to share the
   file itself, or click it to show the file in its folder. It's dimmed
@@ -2394,10 +2396,10 @@ and headings instead of importing flat text.
   disk (save first to include your latest edits). In the three-pane
   workspace it follows the focused document.
 
-- **Saved Word files carry an invisible CardMirror marker.** A .docx
-  saved here names CardMirror and its version in the file's standard
+- **Saved Word files carry an invisible CardMirror Advanced marker.** A .docx
+  saved here names CardMirror Advanced and its version in the file's standard
   application properties (the same place Word names itself), next to
-  the document id CardMirror already kept there. Nothing shows in the
+  the document id CardMirror Advanced already kept there. Nothing shows in the
   document, and it changes nothing about how the file opens in Word or
   anywhere else.
 - **Drag the file out of the title bar (macOS desktop).** Once a document
@@ -2451,7 +2453,7 @@ the existing "Prefix preset saves" toggle.
 
 ### Crash recovery
 
-**(Desktop only.)** CardMirror journals your work as you go, so if it's
+**(Desktop only.)** CardMirror Advanced journals your work as you go, so if it's
 killed mid-edit it offers to recover the unsaved documents the next time
 you launch: each draft in the recovery list can be opened for a look,
 saved, or discarded.
@@ -2470,7 +2472,7 @@ never triggers the extra question.
 ### Version history and Recover Previous Version
 
 **(Desktop only.)** With **Keep version history** on (Settings →
-Files), CardMirror quietly keeps periodic snapshots of your saved
+Files), CardMirror Advanced quietly keeps periodic snapshots of your saved
 documents in its own app data — snapshots are written at save time
 *before* the file write happens, so even a save that hangs (a
 cloud-sync folder acting up) leaves a recoverable version. Standard
@@ -2499,7 +2501,7 @@ click-to-preview and per-version digests.
 
 ### Damaged files
 
-Structural damage to a `.cmir` file is rare, and CardMirror defends
+Structural damage to a `.cmir` file is rare, and CardMirror Advanced defends
 against it in layers. Every save validates the document first: known
 damage is repaired on the spot, the repaired version is what gets
 written, and a notice asks you to report it (that report is how the
@@ -2508,7 +2510,7 @@ known-fixable damage — like an invisible empty shell left by an old
 bug — are repaired automatically and simply load.
 
 If a file is too damaged even for the automatic repairs, the "This
-CardMirror file is damaged" message offers **Repair**: CardMirror
+CardMirror Advanced file is damaged" message offers **Repair**: CardMirror Advanced
 shows you exactly what would be removed — quoting each damaged
 element's text, or noting when nothing visible would be lost — and, if
 you accept, opens a repaired copy. The original file is never touched:
@@ -2519,7 +2521,7 @@ instead.
 
 ### Updates
 
-**(Desktop only.)** CardMirror checks for updates automatically — silently
+**(Desktop only.)** CardMirror Advanced checks for updates automatically — silently
 at launch and once a day — and only speaks up when a new version is
 actually ready. You can turn this off with the **Check for updates
 automatically** toggle in Settings → General → About this install;
@@ -2566,7 +2568,7 @@ To find a setting without knowing its tab, type in the **Search
 settings** box at the top of the dialog (it has focus when Settings
 opens; **Mod-F** returns to it). Matching rows from every tab are
 listed together under their tab names. A few everyday words map to
-CardMirror's terms, so "toolbar" finds the ribbon settings and
+CardMirror Advanced's terms, so "toolbar" finds the ribbon settings and
 "hotkey" finds Keyboard. **Esc** clears the search, and a second Esc
 closes Settings.
 
@@ -2960,7 +2962,7 @@ Typing helpers and the behavior of the cutting and condense commands
 **Paste**
 
 - **Smart paste conversion** — recognize content copied from Microsoft
-  Word or haku.cards and convert it into CardMirror structure on paste
+  Word or haku.cards and convert it into CardMirror Advanced structure on paste
   (see the Smart paste section above). On by default; Paste Text (F2)
   always pastes plain.
 
@@ -3115,17 +3117,17 @@ remove one, **↺** to restore its default. A few window-level shortcuts
   animated. Off by default; the global reduce-motion preference also
   flattens them.
 - **Screen reader support** *(desktop)* — let screen readers and other
-  assistive technology read CardMirror. **Off by default**: a current Chromium
+  assistive technology read CardMirror Advanced. **Off by default**: a current Chromium
   bug crashes the window (white screen, lost work) while building the
-  accessibility tree, so CardMirror disables it to stay stable. Turn it on only
+  accessibility tree, so CardMirror Advanced disables it to stay stable. Turn it on only
   if you rely on a screen reader — it re-activates the known crash — and restart
-  CardMirror to apply.
+  CardMirror Advanced to apply.
 - **Color-vision friendly palette** — remaps the colors that carry meaning
   (annotation accents, voice-mode dots, prep-timer Aff/Neg, search-match
   highlights, category chips) onto a palette engineered to stay
   distinguishable under red-green and blue-yellow color-vision deficiencies.
   Works with both light and dark themes; any colors you set under **Color
-  overrides** still win. This preset changes CardMirror's interface colors
+  overrides** still win. This preset changes CardMirror Advanced's interface colors
   only — highlights and background colors stored in documents are
   untouched. For those, use the **Override highlight/background color**
   settings below and the status-bar color names setting above.
@@ -3167,7 +3169,7 @@ remove one, **↺** to restore its default. A few window-level shortcuts
 
 ## 18. Appearance and accessibility
 
-Everything visual in CardMirror is customizable, and — importantly — your
+Everything visual in CardMirror Advanced is customizable, and — importantly — your
 display choices **never change the file**. The way you like to see Tags is
 separate from how Tags look for everyone else (to change that for
 everyone, apply direct formatting in the document itself).
@@ -3180,7 +3182,7 @@ everyone, apply direct formatting in the document itself).
   styles for your own viewing.
 - **Accessibility overrides.** Remap highlight and background colors,
   override document text color, and pick dyslexia-friendly body fonts
-  (Atkinson Hyperlegible, Lexend, OpenDyslexic, and others). CardMirror
+  (Atkinson Hyperlegible, Lexend, OpenDyslexic, and others). CardMirror Advanced
   also forces readable contrast on highlighted and shaded text
   automatically. A **Steady text cursor (no blinking)** option (off by
   default) replaces the blinking caret with a steady one.
@@ -3287,7 +3289,7 @@ The full, current list is always in the app: press **📖** in the ribbon.
 
 ## 20. Plugins (experimental)
 
-Plugins extend CardMirror with new commands and integrations written
+Plugins extend CardMirror Advanced with new commands and integrations written
 by third parties. The system is experimental and desktop-only.
 
 **Turning it on.** The Settings → **Plugins** tab holds the master
@@ -3295,7 +3297,7 @@ switch (**Enable plugins** — takes effect on the next launch) and the
 install list.
 
 **Installing.** Paste a GitHub URL or `owner/repo` into the install
-field. Plugins run with **full access to CardMirror and your
+field. Plugins run with **full access to CardMirror Advanced and your
 documents**, so installs are limited to a curated list, and every
 install shows a consent prompt naming the exact GitHub repository the
 code comes from — nothing is written until you accept. The first
@@ -3318,36 +3320,36 @@ closes.
 settings, its shortcuts, and any custom ribbon buttons bound to its
 commands immediately; any background code it was running stops on the
 next launch. Note that a companion *app* (like ebb itself) connects
-to CardMirror separately from its plugin — uninstalling the plugin
+to CardMirror Advanced separately from its plugin — uninstalling the plugin
 doesn't cut that connection. That's what **External apps** below is
 for.
 
 **External apps.** Companion apps on your computer can insert text
 into your documents (and jump you to sources) over a local
 connection. The External apps section of this tab controls who may:
-the first time an app sends, CardMirror asks — **Always Allow / Allow
+the first time an app sends, CardMirror Advanced asks — **Always Allow / Allow
 Once / Deny** — naming the app, and remembers your answer in a list
 here where you can flip a decision or forget an app (it will ask
 again next time). The policy dropdown above the list sets the overall
 stance: **Ask for each app** (default), **Allow all** — every sender
 accepted, including older apps that don't identify themselves — or
 **Block all**. Under the default policy, an app too old to identify
-itself is turned away and CardMirror tells you to update it. Like
+itself is turned away and CardMirror Advanced tells you to update it. Like
 Verbatim Flow, this section works regardless of the Enable plugins
 switch.
 
 **Connecting Ebb.** [Ebb](https://github.com/shreerammodi/ebb) is a
-flowing app with a two-way CardMirror integration: send what you're
+flowing app with a two-way CardMirror Advanced integration: send what you're
 reading onto your flow, and jump from a flow cell back to the passage
 it came from. To set it up:
 
 1. Install and open Ebb itself at least once (its own releases page
-   has installers; CardMirror and Ebb must run on the same computer).
-2. In CardMirror, turn on **Enable plugins** in Settings → **Plugins**
+   has installers; CardMirror Advanced and Ebb must run on the same computer).
+2. In CardMirror Advanced, turn on **Enable plugins** in Settings → **Plugins**
    (takes effect on the next launch), then paste
    `shreerammodi/cardmirror-ebb-plugin` into the install field and
    accept the consent prompt.
-3. The first time Ebb selects something in CardMirror (see below),
+3. The first time Ebb selects something in CardMirror Advanced (see below),
    the standard External apps prompt asks whether to allow it —
    choose **Always Allow** to set it up once.
 
@@ -3411,6 +3413,6 @@ documented in the repository README and reference docs.
 - **Anchor / unanchored / re-ground** — how a flashcard or note attaches
   to a span of text; an anchor that can't be found is unanchored until you
   re-ground it.
-- **`.cmir` / `.docx`** — CardMirror's native format / the Word format
+- **`.cmir` / `.docx`** — CardMirror Advanced's native format / the Word format
   for sharing.
 - **Mod** — Ctrl on Windows/Linux, ⌘ on macOS.

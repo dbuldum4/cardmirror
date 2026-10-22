@@ -2,8 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY server.py .
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.2"
+RUN python -m pip install --no-cache-dir -r requirements.txt
+COPY server.py body_limits.py ./
 
 # Single worker ONLY: the SSE push registry is in-process.
 # --limit-concurrency is a connection-storm backstop; it counts

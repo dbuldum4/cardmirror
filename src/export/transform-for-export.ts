@@ -75,9 +75,9 @@ export function transformForExport(
  *
  *  Never the user's own working file, in either format. The baked red is
  *  the marker's own colour, so it merges into the marker's run; reopened,
- *  CardMirror reads all of it as marker text, and toggling the marker off
+ *  CardMirror Advanced reads all of it as marker text, and toggling the marker off
  *  DELETES it (the rest of that paragraph). It also outlives the setting
- *  and a moved marker. CardMirror redraws the red from the marker itself,
+ *  and a moved marker. CardMirror Advanced redraws the red from the marker itself,
  *  so a working file loses nothing by not carrying it. */
 export function bakesUnreadRedOnSave(
   format: 'cmir' | 'docx',

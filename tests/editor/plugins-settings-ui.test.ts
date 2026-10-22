@@ -76,7 +76,7 @@ describe('plugins settings panel styling', () => {
     const el = document.createElement('div');
     renderPluginsPanel(el);
     expect(el.querySelector('.pmd-settings-empty')!.textContent).toBe(
-      'Restart CardMirror to activate plugins.',
+      'Restart CardMirror Advanced to activate plugins.',
     );
   });
 });

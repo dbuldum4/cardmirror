@@ -11,7 +11,7 @@
  *
  * Order matters:
  *
- *  1. CardMirror's own clipboard (pmd-* classes) → null. The schema's
+ *  1. CardMirror Advanced's own clipboard (pmd-* classes) → null. The schema's
  *     parse rules already understand it.
  *  2. Google Docs (docs-internal-guid) → null. Debaters cut in Docs
  *     too, and its inline-styled output superficially resembles

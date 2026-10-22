@@ -162,7 +162,7 @@ class HomeScreen {
     header.appendChild(this.backBtn);
     const title = document.createElement('h1');
     title.className = 'pmd-home-title';
-    title.textContent = 'CardMirror';
+    title.textContent = 'CardMirror Advanced';
     header.appendChild(title);
     const tagline = document.createElement('p');
     tagline.className = 'pmd-home-tagline';

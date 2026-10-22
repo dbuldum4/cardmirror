@@ -13,7 +13,7 @@
  * So a lossy export bakes the numbers first, on the FULL document, before
  * the strips run: each numbered heading gets its glyph as literal text
  * (the user's display separators, e.g. "3. " / "b) "), and the card's
- * role is cleared so neither the docx exporter nor a later CardMirror
+ * role is cleared so neither the docx exporter nor a later CardMirror Advanced
  * session numbers it a second time. The text carries no marks — it takes
  * the heading's own style, as a Word number takes the paragraph's — and
  * the working document is untouched (this runs on the export copy).

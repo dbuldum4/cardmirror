@@ -1,9 +1,9 @@
 {
-  "name": "@cardmirror/desktop",
-  "version": "1.15.0",
-  "description": "CardMirror \u2014 Electron desktop wrapper",
+  "name": "@cardmirror-advanced/desktop",
+  "version": "2.0.0",
+  "description": "CardMirror Advanced \u2014 Electron desktop wrapper",
   "author": "Anthony Trufanov",
-  "homepage": "https://github.com/ant981228/cardmirror",
+  "homepage": "https://github.com/dbuldum4/cardmirror-advanced",
   "private": true,
   "type": "commonjs",
   "main": "dist/main.js",
@@ -18,16 +18,18 @@
     "build:native": "node scripts/build-ax-suppress.cjs",
     "pack": "npm run fetch:koffi-cross && npm run build:native && npm run build:renderer && npm run build:main && npm run build:service && electron-builder --dir",
     "dist": "npm run fetch:koffi-cross && npm run build:native && npm run build:renderer && npm run build:main && npm run build:service && electron-builder",
-    "release": "npm run fetch:koffi-cross && npm run build:native && npm run build:renderer && npm run build:main && npm run build:service && electron-builder --publish always",
+    "release": "npm run check:release-runtime && npm run fetch:koffi-cross && npm run build:native && npm run build:renderer && npm run build:main && npm run build:service && electron-builder --publish always",
     "fetch:koffi-cross": "bash scripts/fetch-koffi-cross.sh",
-    "pack:lite": "node scripts/inject-lite-build.cjs 1 && VITE_LITE=1 npm run pack -- -c.productName=\"CardMirror Lite\" -c.appId=com.cardmirror.lite -c.executableName=\"CardMirror Lite\"; node scripts/inject-lite-build.cjs 0",
-    "dist:lite": "node scripts/inject-lite-build.cjs 1 && VITE_LITE=1 npm run dist -- -c.appId=com.cardmirror.lite -c.productName=\"CardMirror Lite\" -c.mac.artifactName=\"CardMirror-Lite-${version}-${arch}.${ext}\" -c.win.artifactName=\"CardMirror-Lite-Setup-${version}.${ext}\" -c.linux.artifactName=\"cardmirror-lite-${version}.${ext}\" -c.executableName=\"CardMirror Lite\" -c.linux.executableName=cardmirror-lite; node scripts/inject-lite-build.cjs 0"
+    "pack:lite": "node scripts/inject-lite-build.cjs 1 && VITE_LITE=1 npm run pack -- -c.productName=\"CardMirror Advanced Lite\" -c.appId=io.github.dbuldum4.cardmirror-advanced.lite -c.executableName=\"CardMirror Advanced Lite\"; node scripts/inject-lite-build.cjs 0",
+    "dist:lite": "node scripts/inject-lite-build.cjs 1 && VITE_LITE=1 npm run dist -- -c.appId=io.github.dbuldum4.cardmirror-advanced.lite -c.productName=\"CardMirror Advanced Lite\" -c.mac.artifactName=\"CardMirror-Advanced-Lite-${version}-${arch}.${ext}\" -c.win.artifactName=\"CardMirror-Advanced-Lite-Setup-${version}.${ext}\" -c.linux.artifactName=\"cardmirror-advanced-lite-${version}.${ext}\" -c.executableName=\"CardMirror Advanced Lite\" -c.linux.executableName=cardmirror-advanced-lite; node scripts/inject-lite-build.cjs 0",
+    "check:runtime": "node scripts/check-electron-runtime.cjs",
+    "check:release-runtime": "node scripts/check-electron-runtime.cjs --require-patched-node"
   },
   "build": {
-    "appId": "com.cardmirror.app",
-    "productName": "CardMirror",
-    "executableName": "cardmirror",
-    "electronVersion": "42.11.18",
+    "appId": "io.github.dbuldum4.cardmirror-advanced",
+    "productName": "CardMirror Advanced",
+    "executableName": "cardmirror-advanced",
+    "electronVersion": "45.0.0",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -69,8 +71,8 @@
     "fileAssociations": [
       {
         "ext": "cmir",
-        "name": "CardMirror Document",
-        "description": "CardMirror native document",
+        "name": "CardMirror Advanced Document",
+        "description": "CardMirror-compatible native document",
         "role": "Editor"
       }
     ],
@@ -92,7 +94,7 @@
       ],
       "extendInfo": {
         "NSAppSleepDisabled": true,
-        "NSMicrophoneUsageDescription": "CardMirror uses the microphone for voice control and dictation."
+        "NSMicrophoneUsageDescription": "CardMirror Advanced uses the microphone for optional voice control and dictation."
       },
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
@@ -111,7 +113,7 @@
     },
     "linux": {
       "category": "Office",
-      "maintainer": "Anthony Trufanov <ant981228@gmail.com>",
+      "maintainer": "CardMirror Advanced contributors",
       "target": [
         {
           "target": "AppImage",
@@ -126,7 +128,7 @@
           ]
         }
       ],
-      "artifactName": "cardmirror-${version}.${ext}"
+      "artifactName": "cardmirror-advanced-${version}.${ext}"
     },
     "pacman": {
       "depends": [
@@ -147,8 +149,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "ant981228",
-      "repo": "cardmirror"
+      "owner": "dbuldum4",
+      "repo": "cardmirror-advanced"
     },
     "afterSign": "scripts/sign-mac.js"
   },
@@ -157,11 +159,24 @@
     "koffi": "^3.0.2"
   },
   "devDependencies": {
-    "sherpa-onnx-node": "1.13.7",
     "concurrently": "^9.1.0",
-    "electron": "42.11.18",
-    "electron-builder": "^26.8.1",
+    "electron": "45.0.0",
+    "electron-builder": "26.15.3",
+    "sherpa-onnx-node": "1.13.7",
     "typescript": "^5.7.2",
     "wait-on": "^8.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dbuldum4/cardmirror-advanced.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dbuldum4/cardmirror-advanced/issues"
+  },
+  "overrides": {
+    "sprintf-js": "file:vendor/sprintf-js"
+  },
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   }
 }

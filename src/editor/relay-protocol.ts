@@ -9,7 +9,7 @@
  */
 
 /**
- * Header naming the CardMirror build behind a relay request.
+ * Header naming the CardMirror Advanced build behind a relay request.
  *
  * Sent on every relay call so the server can tell versions apart. It is
  * advisory only — relays that don't know the header ignore it, which is
@@ -51,7 +51,7 @@ export const RELAY_CLIENT_ROUTING_HEADER = 'X-CardMirror-Routing';
 export const MOVABLE_ROOMS_MIN_VERSION = '1.0.0';
 
 /**
- * Prerelease-aware version compare for CardMirror's version shapes
+ * Prerelease-aware version compare for CardMirror Advanced's version shapes
  * (`X.Y.Z`, `X.Y.Z-alpha.N`, `-beta.N`, `-rc.N`). Returns <0, 0, >0.
  * A release outranks its own prereleases; unknown prerelease labels
  * rank with beta; unparseable strings rank lowest (a garbled version

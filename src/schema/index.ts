@@ -1,5 +1,5 @@
 /**
- * The CardMirror schema.
+ * The CardMirror Advanced schema.
  *
  * Top-level export. See ARCHITECTURE.md §4 for the design rationale,
  * NOTES-verbatim.md for the docx data model this schema is shaped to

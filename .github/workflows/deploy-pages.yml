@@ -8,10 +8,6 @@ name: Deploy redirect stub to GitHub Pages
 # what old links and installed apps land on.
 
 on:
-  push:
-    branches: [main]
-    paths: ['web-redirect/**', '.github/workflows/deploy-pages.yml']
-  # Allow a manual re-deploy from the Actions tab.
   workflow_dispatch:
 
 # Single concurrent run; cancel in-progress deploys if a newer commit lands.
@@ -27,6 +23,7 @@ permissions:
 
 jobs:
   deploy:
+    if: github.repository == 'ant981228/cardmirror'
     name: Deploy redirect stub
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -25,7 +25,7 @@
  * waiting on timers: Chromium throttles setTimeout/rAF in occluded
  * windows (up to a minute under intensive throttling), but audio-
  * clock scheduling is sample-accurate regardless of window state —
- * at a tournament, the signal matters most precisely when CardMirror
+ * at a tournament, the signal matters most precisely when CardMirror Advanced
  * is buried behind a speech doc. Every state or settings change
  * cancels and re-derives the schedule from `runningSince + base`, so
  * pause / reset / preset loads can never leave a stale beep armed;

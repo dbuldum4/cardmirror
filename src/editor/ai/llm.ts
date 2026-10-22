@@ -396,7 +396,7 @@ function throwAnthropicHttpError(
   if (looksLikeModelError) {
     throw new LlmError(
       `The AI model "${requestedModel}" was rejected by Anthropic — it may have been retired. ` +
-        `Update CardMirror to the latest version, or, if you'd rather not update the whole app, ` +
+        `Update CardMirror Advanced to the latest version, or, if you'd rather not update the whole app, ` +
         `set a newer model under Settings → Comments & AI → AI model.`,
       status,
       'model',

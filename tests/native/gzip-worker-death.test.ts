@@ -15,14 +15,21 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const workerCalls = vi.hoisted(() => ({ n: 0 }));
+const workerCalls = vi.hoisted(() => ({ n: 0, sync: 0, failSync: false, terminated: 0, callback: null as null | ((err: Error | null, out?: Uint8Array) => void) }));
 vi.mock('fflate', async (importOriginal) => {
   const real = await importOriginal<typeof import('fflate')>();
   return {
     ...real,
     // Spawns "successfully" (no throw), then never answers.
-    gzip: (_b: Uint8Array, _o: unknown, _cb: unknown) => {
+    gzipSync: (...args: Parameters<typeof real.gzipSync>) => {
+      workerCalls.sync++;
+      if (workerCalls.failSync) throw new Error('compression failed');
+      return real.gzipSync(...args);
+    },
+    gzip: (_b: Uint8Array, _o: unknown, cb: typeof workerCalls.callback) => {
       workerCalls.n++;
+      workerCalls.callback = cb;
+      return () => { workerCalls.terminated++; };
     },
   };
 });
@@ -38,7 +45,7 @@ const input = new TextEncoder().encode(JSON.stringify({ doc: 'x'.repeat(5000) })
 
 beforeEach(() => {
   __resetGzipWorkerStateForTests();
-  workerCalls.n = 0;
+  workerCalls.n = 0; workerCalls.sync = 0; workerCalls.failSync = false; workerCalls.terminated = 0; workerCalls.callback = null;
 });
 
 describe('gzipAsync worker-death fallback', () => {
@@ -58,3 +65,17 @@ describe('gzipAsync worker-death fallback', () => {
     expect(Array.from(gunzip(out))).toEqual(Array.from(input));
   });
 });
+
+ it('rejects failed fallback compression instead of leaving a save pending', async () => {
+   workerCalls.failSync = true;
+   await expect(gzipAsync(input, 5)).rejects.toThrow('compression failed');
+   // The session latch must still return a rejected Promise on the next save.
+   await expect(gzipAsync(input, 5)).rejects.toThrow('compression failed');
+ });
+ it('terminates a timed-out worker and ignores its late error callback', async () => {
+   await gzipAsync(input, 5);
+   expect(workerCalls.terminated).toBe(1);
+   const syncCalls = workerCalls.sync;
+   workerCalls.callback?.(new Error('late worker failure'));
+   expect(workerCalls.sync).toBe(syncCalls);
+ });

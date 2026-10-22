@@ -4,7 +4,7 @@
  * Windows Explorer's "New > Microsoft Word Document" (ShellNew — Office's
  * VFS template is literally 0 bytes by design), `touch`, and some export
  * tools create REAL zero-byte files. Word opens those as a blank document
- * bound to the path; through v1.4.0 CardMirror refused them with "This
+ * bound to the path; through v1.4.0 CardMirror Advanced refused them with "This
  * file is empty or hasn't finished downloading" — a guard meant for cloud
  * placeholders, catching innocent files too.
  *

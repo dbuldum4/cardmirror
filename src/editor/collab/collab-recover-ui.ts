@@ -105,7 +105,7 @@ async function pickEnvelopeFromFile(): Promise<HistoryEnvelope | null> {
   if (!path) return null;
   const envelope = await host.readHistory({ path });
   if (!envelope) {
-    showToast('That file could not be read as CardMirror session history.');
+    showToast('That file could not be read as CardMirror Advanced session history.');
     return null;
   }
   return envelope;

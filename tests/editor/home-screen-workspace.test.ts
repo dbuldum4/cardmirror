@@ -7,7 +7,7 @@
  * None flip every row at once.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { homeScreen, type HomeScreenCallbacks } from '../../src/editor/home-screen.js';
 import { settings } from '../../src/editor/settings.js';
 import {
@@ -16,14 +16,14 @@ import {
   lastWorkspace,
 } from '../../src/editor/workspace-store.js';
 
-function makeCallbacks(): HomeScreenCallbacks & { reopenWorkspace: ReturnType<typeof vi.fn> } {
+function makeCallbacks(): HomeScreenCallbacks & { reopenWorkspace: Mock<NonNullable<HomeScreenCallbacks['reopenWorkspace']>> } {
   return {
     newDoc: vi.fn(),
     newSpeechDoc: vi.fn(),
     open: vi.fn(),
     openRecent: vi.fn(),
     manageQuickCards: vi.fn(),
-    reopenWorkspace: vi.fn(),
+    reopenWorkspace: vi.fn<NonNullable<HomeScreenCallbacks['reopenWorkspace']>>(),
   };
 }
 

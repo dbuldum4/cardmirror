@@ -1,3 +1,13 @@
+> **Fork notice:** This is CardMirror Advanced, an independent noncommercial
+> fork. The upstream document below is retained for historical context and
+> attribution; its descriptions of the original maintainer's hosted services
+> are not promises or services provided by this fork. This fork has a separate
+> local profile, no default production relay, and fork-specific update URLs.
+> Optional AI, account-linking, model-download, and plugin features can still
+> contact their configured third-party providers when you enable them. Review
+> those settings and provider terms before use. The software license remains
+> [LICENSE](./LICENSE).
+
 # CardMirror Terms of Use
 
 **Effective: July 7, 2026**

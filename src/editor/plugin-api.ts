@@ -169,7 +169,7 @@ export function createPluginApi(pluginId: string, deps: PluginApiDeps): CardMirr
     },
     showToast(message) {
       // Third-party text: attribute it to the plugin (so it can't
-      // impersonate a CardMirror system message) and cap the toast;
+      // impersonate a CardMirror Advanced system message) and cap the toast;
       // anything longer lands as a durable chip notice instead of a
       // wall-of-text tooltip.
       const text = String(message);

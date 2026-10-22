@@ -6,7 +6,7 @@
  * key descriptor) and `EncryptedPackage` (the AES-CBC-encrypted zip).
  * This module recognizes such files, and — given the password —
  * decrypts the package back to ordinary .docx bytes for the existing
- * importer. Decrypt-only: CardMirror never writes encryption.
+ * importer. Decrypt-only: CardMirror Advanced never writes encryption.
  *
  * Scope: Agile encryption (EncryptionInfo version 4.4), which is what
  * modern Word/Excel/PowerPoint produce. The older "Standard" scheme
@@ -22,6 +22,8 @@
  */
 
 import { XMLParser } from 'fast-xml-parser';
+import { checkDocumentSize, MAX_ARCHIVE_BYTES } from '../safe-containers.js';
+import { assertSafeXml } from './parse.js';
 import { sha512 } from './sha512.js';
 import { aesCbcDecrypt } from './aes.js';
 
@@ -51,10 +53,10 @@ const CFB_MAGIC = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
 // Shared so the pre-open classifier and the decryptor speak with one
 // voice (the classifier decides whether to even prompt for a password).
 const MSG_LEGACY_BINARY =
-  'This looks like an old binary Office file (.doc / .xls), which CardMirror can’t open. Open it in Word and re-save as .docx first.';
+  'This looks like an old binary Office file (.doc / .xls), which CardMirror Advanced can’t open. Open it in Word and re-save as .docx first.';
 const MSG_STANDARD =
-  'This file uses an older Office password scheme (Standard encryption) that CardMirror can’t open yet. Re-save it in a current version of Word, or remove the password.';
-const MSG_CORRUPT = 'This file looks like a damaged Office document — CardMirror couldn’t read its structure.';
+  'This file uses an older Office password scheme (Standard encryption) that CardMirror Advanced can’t open yet. Re-save it in a current version of Word, or remove the password.';
+const MSG_CORRUPT = 'This file looks like a damaged Office document — CardMirror Advanced couldn’t read its structure.';
 
 /** True if `bytes` is an OLE/CFB compound file — the container Office
  *  uses for password-encrypted documents (and, historically, for
@@ -84,22 +86,44 @@ class CompoundFile {
   private streams = new Map<string, { start: number; size: number }>();
 
   constructor(private data: Uint8Array) {
+    checkDocumentSize(data.length, MAX_ARCHIVE_BYTES);
+    if (data.length < 512 || !isEncryptedOfficeFile(data)) throw new UnsupportedEncryptionError(MSG_CORRUPT);
     const dv = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const major = dv.getUint16(26, true);
+    const shift = dv.getUint16(30, true);
+    if (dv.getUint16(28, true) !== 0xfffe || !((major === 3 && shift === 9) || (major === 4 && shift === 12)) || dv.getUint16(32, true) !== 6 || dv.getUint32(56, true) !== 4096) {
+      throw new UnsupportedEncryptionError(MSG_CORRUPT);
+    }
     this.sectorSize = 1 << dv.getUint16(30, true);
     this.miniSectorSize = 1 << dv.getUint16(32, true);
     this.miniCutoff = dv.getUint32(56, true);
     const dirStart = dv.getUint32(48, true);
     const miniFatStart = dv.getUint32(60, true);
 
-    // FAT: assembled from the sectors listed in the DIFAT. The first
-    // 109 DIFAT entries live in the header; files needing more use
-    // DIFAT sectors, which no Office-encrypted doc is large enough to
-    // reach (the encrypted package is one stream, MBs at most).
+    // Validate geometry before allocating; include extended DIFAT sectors so
+    // legitimate encrypted files larger than the header's FAT capacity work.
+    const maxSectors = Math.floor(data.length / this.sectorSize) - 1;
+    const fatCount = dv.getUint32(44, true);
+    const difatCount = dv.getUint32(72, true);
+    if (fatCount > maxSectors || difatCount > maxSectors) throw new UnsupportedEncryptionError(MSG_CORRUPT);
     const fatSectors: number[] = [];
-    for (let i = 0; i < 109; i++) {
-      const s = dv.getUint32(76 + i * 4, true);
-      if (s !== FREE_SECT) fatSectors.push(s);
+    const addFat = (sector: number): void => {
+      if (sector === FREE_SECT) return;
+      if (sector >= maxSectors || fatSectors.includes(sector) || fatSectors.length >= fatCount) throw new UnsupportedEncryptionError(MSG_CORRUPT);
+      fatSectors.push(sector);
+    };
+    for (let i = 0; i < 109; i++) addFat(dv.getUint32(76 + i * 4, true));
+    let difat = dv.getUint32(68, true);
+    const seenDifat = new Set<number>();
+    for (let i = 0; i < difatCount; i++) {
+      if (seenDifat.has(difat)) throw new UnsupportedEncryptionError(MSG_CORRUPT);
+      seenDifat.add(difat);
+      const data = this.sector(difat);
+      const table = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      for (let j = 0; j < this.sectorSize - 4; j += 4) addFat(table.getUint32(j, true));
+      difat = table.getUint32(this.sectorSize - 4, true);
     }
+    if (fatSectors.length !== fatCount || (difatCount && difat !== END_OF_CHAIN)) throw new UnsupportedEncryptionError(MSG_CORRUPT);
     const fatBytes = new Uint8Array(fatSectors.length * this.sectorSize);
     fatSectors.forEach((s, i) => fatBytes.set(this.sector(s), i * this.sectorSize));
     this.fat = new Uint32Array(fatBytes.buffer, 0, fatBytes.length >> 2);
@@ -107,16 +131,18 @@ class CompoundFile {
     // Directory chain → stream table + the root entry (whose own
     // chain backs the mini-stream).
     const dirBytes = this.readChain(dirStart, this.fat, (s) => this.sector(s));
-    let rootStart = 0;
+    let rootStart = END_OF_CHAIN;
     for (let off = 0; off + 128 <= dirBytes.length; off += 128) {
       const e = new DataView(dirBytes.buffer, dirBytes.byteOffset + off, 128);
       const nameLen = e.getUint16(64, true);
       if (nameLen === 0) continue;
+      if (nameLen < 2 || nameLen > 64 || nameLen % 2) throw new UnsupportedEncryptionError(MSG_CORRUPT);
       let name = '';
       for (let i = 0; i < nameLen - 2; i += 2) name += String.fromCharCode(e.getUint16(i, true));
       const type = e.getUint8(66);
       const start = e.getUint32(116, true);
       const size = Number(e.getBigUint64(120, true));
+      checkDocumentSize(size, MAX_ARCHIVE_BYTES);
       if (type === 5) rootStart = start; // root storage
       else if (type === 2) this.streams.set(name, { start, size }); // stream
     }
@@ -127,11 +153,13 @@ class CompoundFile {
   }
 
   private sector(i: number): Uint8Array {
-    const off = 512 + i * this.sectorSize;
+    const off = (i + 1) * this.sectorSize;
+    if (!Number.isSafeInteger(off) || off < this.sectorSize || off + this.sectorSize > this.data.length) throw new UnsupportedEncryptionError(MSG_CORRUPT);
     return this.data.subarray(off, off + this.sectorSize);
   }
   private miniSector(i: number): Uint8Array {
     const off = i * this.miniSectorSize;
+    if (off < 0 || off + this.miniSectorSize > this.miniStream.length) throw new UnsupportedEncryptionError(MSG_CORRUPT);
     return this.miniStream.subarray(off, off + this.miniSectorSize);
   }
 
@@ -140,11 +168,13 @@ class CompoundFile {
     const seen = new Set<number>();
     let s = start;
     let total = 0;
-    while (s !== END_OF_CHAIN && s !== FREE_SECT && s < table.length && !seen.has(s)) {
+    while (s !== END_OF_CHAIN && s !== FREE_SECT) {
+      if (s >= table.length || seen.has(s)) throw new UnsupportedEncryptionError(MSG_CORRUPT);
       seen.add(s);
       const chunk = read(s);
       parts.push(chunk);
       total += chunk.length;
+      checkDocumentSize(total, MAX_ARCHIVE_BYTES);
       s = table[s]!;
     }
     const out = new Uint8Array(total);
@@ -161,6 +191,7 @@ class CompoundFile {
       e.size < this.miniCutoff
         ? this.readChain(e.start, this.miniFat, (s) => this.miniSector(s))
         : this.readChain(e.start, this.fat, (s) => this.sector(s));
+    if (raw.length < e.size) throw new UnsupportedEncryptionError(MSG_CORRUPT);
     return raw.subarray(0, e.size);
   }
 }
@@ -219,6 +250,7 @@ interface AgileDescriptor {
 }
 
 function b64(s: string): Uint8Array {
+  if (typeof s !== 'string' || s.length > 512 || !/^[A-Za-z0-9+/=\s]*$/.test(s)) throw new UnsupportedEncryptionError(MSG_CORRUPT);
   const bin = atob(s);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
@@ -229,6 +261,7 @@ const attrParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix:
 
 /** Parse the Agile EncryptionInfo XML descriptor into typed fields. */
 function parseAgile(infoXml: string): AgileDescriptor {
+  assertSafeXml(infoXml);
   const root = attrParser.parse(infoXml) as Record<string, unknown>;
   const encryption = root['encryption'] as Record<string, unknown> | undefined;
   const keyData = encryption?.['keyData'] as Record<string, string> | undefined;
@@ -240,23 +273,29 @@ function parseAgile(infoXml: string): AgileDescriptor {
   if (Array.isArray(keyEncryptor)) keyEncryptor = keyEncryptor.find((k) => (k as Record<string, unknown>)['p:encryptedKey']);
   const enc = (keyEncryptor as Record<string, unknown> | undefined)?.['p:encryptedKey'] as Record<string, string> | undefined;
   if (!keyData || !enc) {
-    throw new UnsupportedEncryptionError('This file uses an Office encryption scheme CardMirror can’t open (no password key found).');
+    throw new UnsupportedEncryptionError('This file uses an Office encryption scheme CardMirror Advanced can’t open (no password key found).');
   }
   const alg = keyData['cipherAlgorithm'] ?? '';
   const chain = keyData['cipherChaining'] ?? '';
   const hash = keyData['hashAlgorithm'] ?? '';
   if (alg !== 'AES' || chain !== 'ChainingModeCBC') {
-    throw new UnsupportedEncryptionError(`This file uses ${alg || 'an unknown'} ${chain || ''} encryption, which CardMirror can’t open.`.replace(/\s+/g, ' ').trim() + '.');
+    throw new UnsupportedEncryptionError(`This file uses ${alg || 'an unknown'} ${chain || ''} encryption, which CardMirror Advanced can’t open.`.replace(/\s+/g, ' ').trim() + '.');
   }
   if (!/^SHA-?512$/i.test(hash)) {
-    throw new UnsupportedEncryptionError(`This file uses ${hash || 'an unsupported'} password hashing, which CardMirror can’t open.`);
+    throw new UnsupportedEncryptionError(`This file uses ${hash || 'an unsupported'} password hashing, which CardMirror Advanced can’t open.`);
   }
-  return {
+  const integer = (value: string | undefined, max: number): number => {
+    if (!value || !/^\d+$/.test(value)) throw new UnsupportedEncryptionError(MSG_CORRUPT);
+    const n = Number(value);
+    if (!Number.isSafeInteger(n) || n > max) throw new UnsupportedEncryptionError('Office encryption parameters exceed the supported safety limits.');
+    return n;
+  };
+  const descriptor = {
     keyDataSalt: b64(keyData['saltValue']!),
-    keyBits: parseInt(keyData['keyBits']!, 10),
+    keyBits: integer(keyData['keyBits'], 256),
     pwSalt: b64(enc['saltValue']!),
-    spinCount: parseInt(enc['spinCount']!, 10),
-    pwKeyBits: parseInt(enc['keyBits']!, 10),
+    spinCount: integer(enc['spinCount'], 1_000_000),
+    pwKeyBits: integer(enc['keyBits'], 256),
     encryptedKeyValue: b64(enc['encryptedKeyValue']!),
     encryptedVerifierHashInput: b64(enc['encryptedVerifierHashInput']!),
     encryptedVerifierHashValue: b64(enc['encryptedVerifierHashValue']!),
@@ -264,6 +303,15 @@ function parseAgile(infoXml: string): AgileDescriptor {
     cipherAlgorithm: alg,
     cipherChaining: chain,
   };
+  if (![128, 192, 256].includes(descriptor.keyBits) || ![128, 192, 256].includes(descriptor.pwKeyBits) || descriptor.keyDataSalt.length !== 16 || descriptor.pwSalt.length !== 16 || descriptor.encryptedVerifierHashInput.length !== 16 || descriptor.encryptedVerifierHashValue.length !== 64 || descriptor.encryptedKeyValue.length !== Math.ceil(descriptor.keyBits / 128) * 16) {
+    throw new UnsupportedEncryptionError(MSG_CORRUPT);
+  }
+  for (const attrs of [keyData, enc]) {
+    if (attrs['cipherAlgorithm'] !== 'AES' || attrs['cipherChaining'] !== 'ChainingModeCBC' || !/^SHA-?512$/i.test(attrs['hashAlgorithm'] ?? '') || integer(attrs['blockSize'], 16) !== 16 || integer(attrs['saltSize'], 16) !== 16 || integer(attrs['hashSize'], 64) !== 64) {
+      throw new UnsupportedEncryptionError('Unsupported Office encryption parameters.');
+    }
+  }
+  return descriptor;
 }
 
 /** Constant-time-ish compare of the first `n` bytes. Not a security
@@ -322,6 +370,11 @@ export function decryptOfficeDocument(bytes: Uint8Array, password: string): Uint
 
   const xml = new TextDecoder().decode(info.subarray(8));
   const d = parseAgile(xml);
+  if (pkg.length < 8) throw new UnsupportedEncryptionError(MSG_CORRUPT);
+  const totalSize = Number(new DataView(pkg.buffer, pkg.byteOffset).getBigUint64(0, true));
+  checkDocumentSize(totalSize, MAX_ARCHIVE_BYTES);
+  const cipher = pkg.subarray(8);
+  if (!Number.isSafeInteger(totalSize) || totalSize <= 0 || cipher.length !== Math.ceil(totalSize / 16) * 16) throw new UnsupportedEncryptionError(MSG_CORRUPT);
   const keyBytes = d.pwKeyBits / 8;
   const ivLen = 16; // AES block size
 
@@ -338,8 +391,6 @@ export function decryptOfficeDocument(bytes: Uint8Array, password: string): Uint
   const keyValueKey = deriveKey(password, d.pwSalt, d.spinCount, BLOCK_KEY_VALUE, keyBytes);
   const secret = aesCbcDecrypt(keyValueKey, iv0, d.encryptedKeyValue).subarray(0, d.keyBits / 8);
 
-  const totalSize = Number(new DataView(pkg.buffer, pkg.byteOffset).getBigUint64(0, true));
-  const cipher = pkg.subarray(8);
   const out = new Uint8Array(cipher.length);
   const SEG = 4096;
   for (let i = 0, off = 0; off < cipher.length; i++, off += SEG) {

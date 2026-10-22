@@ -62,7 +62,7 @@ export function warnIfSlow<T>(
       body:
         `Preparing "${name}" to be saved is taking unusually long. ` +
         `The save will continue — if this happens repeatedly, restart ` +
-        `CardMirror and report it.`,
+        `CardMirror Advanced and report it.`,
       key: `slow-save:${name}`,
     });
   }, warnMs);

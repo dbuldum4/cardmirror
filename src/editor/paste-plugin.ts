@@ -604,7 +604,7 @@ export function buildPastePlugin(ctx: PastePluginCtx): Plugin<PluginState> {
         // Smart paste conversion: clipboard HTML that carries a strong
         // source signature (Word's document shell; haku's builder
         // fingerprint — see paste-dialect.ts) converts through the docx
-        // importer's assembly path into real CardMirror structure:
+        // importer's assembly path into real CardMirror Advanced structure:
         // cards, cites, headings, named-style marks, highlights,
         // numbering. Runs AFTER the F2 branch (explicit plain paste
         // always wins) and only when the setting is on. The converter

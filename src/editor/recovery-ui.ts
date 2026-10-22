@@ -103,7 +103,7 @@ class RecoverySidebar {
     closeBtn.type = 'button';
     closeBtn.className = 'pmd-recovery-sidebar-close';
     setIcon(closeBtn, 'close');
-    closeBtn.title = 'Close — drafts left here will reappear next time you launch CardMirror';
+    closeBtn.title = 'Close — drafts left here will reappear next time you launch CardMirror Advanced';
     closeBtn.addEventListener('click', () => this.close());
     header.appendChild(closeBtn);
     this.root.appendChild(header);

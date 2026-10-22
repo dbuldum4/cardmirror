@@ -5,7 +5,7 @@
  * General (see `benchmark-ui.ts`).
  *
  * Self-instrumented via `requestAnimationFrame` + `PerformanceObserver`, so it
- * measures CardMirror's OWN rendering — a "how fast is it on my machine" readout,
+ * measures CardMirror Advanced's OWN rendering — a "how fast is it on my machine" readout,
  * not a cross-application comparison.
  *
  * The editor must be VISIBLE while this runs (occluded content gets its paints

@@ -1,5 +1,5 @@
 /**
- * CardMirror Lite (2026-08-18): a BUILD VARIANT — not a fork — for
+ * CardMirror Advanced Lite (2026-08-18): a BUILD VARIANT — not a fork — for
  * school environments whose vendor audits require no AI features and
  * no internet communication (field driver: a district denied the app
  * over unblockable student-supplied AI keys; their own recommendation

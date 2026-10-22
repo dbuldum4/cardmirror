@@ -6,7 +6,7 @@
  *   - role 'number' → `<w:numPr>` ilvl 0; role 'sub' → ilvl 1; 'none' → no numPr.
  *   - every restart boundary (a restarting card, a default-restart block, a
  *     pocket/hat) starts a fresh `numId`, and each numId is an independent Word
- *     counter — so Word restarts exactly where CardMirror does. A "continue"
+ *     counter — so Word restarts exactly where CardMirror Advanced does. A "continue"
  *     block simply keeps the running numId across its (numPr-less) heading.
  * All numIds share one abstractNum, whose two levels render `1.` and `a.`
  * — the CANONICAL glyphs (the app's display defaults), deliberately NOT the

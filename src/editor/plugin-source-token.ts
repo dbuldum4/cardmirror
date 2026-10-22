@@ -1,7 +1,7 @@
 // src/editor/plugin-source-token.ts
 /**
  * Opaque provenance token — the versioned blob a flowing app stores and
- * hands back verbatim. Only CardMirror mints and parses these. The
+ * hands back verbatim. Only CardMirror Advanced mints and parses these. The
  * `cmsrc1` prefix is the version indicator; a future format change
  * bumps the prefix and keeps this parser for old tokens.
  */

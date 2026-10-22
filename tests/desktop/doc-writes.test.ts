@@ -446,3 +446,17 @@ describe('rename retry — transiently locked target (Dropbox/antivirus holds)',
     expect(leftovers).toEqual([]);
   });
 });
+
+ describe('exclusive atomic staging', () => {
+   it.skipIf(process.platform === 'win32')('never follows a predictable pre-planted staging symlink', async () => {
+     const victim = docPath('private.cmir');
+     await fs.writeFile(victim, 'private contents');
+     const target = docPath('new.cmir');
+     const planted = path.join(caseDir, '.new.cmir.cmtmp');
+     await fs.symlink(victim, planted);
+     await saveNewDoc(target, Buffer.from('new document'));
+     expect(await read(victim)).toBe('private contents');
+     expect(await read(target)).toBe('new document');
+     expect((await fs.lstat(planted)).isSymbolicLink()).toBe(true);
+   });
+ });

@@ -1,6 +1,6 @@
 /**
  * Select Speech Doc modal — lists every open document across every
- * CardMirror window, indicates which one is currently the speech
+ * CardMirror Advanced window, indicates which one is currently the speech
  * doc (gold accent matching the `--pmd-c-speech-*` tokens), and
  * lets the user pick a different one or clear the designation
  * entirely.

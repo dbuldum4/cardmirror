@@ -71,7 +71,7 @@ describe('CardMirror Lite', () => {
     await withLite(async () => {
       const { getInstallInfo, appVersion } = await import('../../src/editor/install-info.js');
       const version = getInstallInfo().find((e) => e.label === 'Version');
-      expect(version?.value).toBe(`${appVersion} (CardMirror Lite)`);
+      expect(version?.value).toBe(`${appVersion} (CardMirror Advanced Lite)`);
     });
     // Standard builds keep the bare version — no edition suffix.
     vi.resetModules();

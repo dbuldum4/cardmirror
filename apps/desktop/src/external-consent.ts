@@ -12,7 +12,7 @@
  *
  * Wire disposition per request (identity = `X-App-Id` header):
  *   - no/malformed appId  → 'unidentified'  (rejected outright — no
- *     grandfathering; CardMirror itself explains, in place of the
+ *     grandfathering; CardMirror Advanced itself explains, in place of the
  *     consent prompt, that the sending app needs an update — the
  *     route layer owns that notification, since it can fingerprint
  *     which legacy app is likely knocking)

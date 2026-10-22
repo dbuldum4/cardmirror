@@ -20,13 +20,13 @@
 import { getElectronHost } from './host/index.js';
 import { promptForRouteChoice } from './text-prompt.js';
 
-const REPO_URL = 'https://github.com/ant981228/cardmirror';
+const REPO_URL = 'https://github.com/dbuldum4/cardmirror-advanced';
 // The LIST endpoint, newest first — NOT `/releases/latest`, which only
-// serves full releases and returns nothing while every CardMirror
+// serves full releases and returns nothing while every CardMirror Advanced
 // release is marked pre-release (beta). Same reason the fallback page
 // is `/releases`, not `/releases/latest`.
 const LATEST_RELEASE_API =
-  'https://api.github.com/repos/ant981228/cardmirror/releases?per_page=1';
+  'https://api.github.com/repos/dbuldum4/cardmirror-advanced/releases?per_page=1';
 const RELEASES_PAGE = `${REPO_URL}/releases`;
 
 export type InstallerTarget = 'win-x64' | 'mac-arm64' | 'mac-x64' | 'linux-appimage';
@@ -123,7 +123,7 @@ async function readBrowserSignals(): Promise<PlatformSignals> {
 
 async function pickTargetViaDialog(): Promise<InstallerTarget | null> {
   return promptForRouteChoice<InstallerTarget>({
-    message: 'Download the CardMirror desktop app — pick your platform:',
+    message: 'Download the CardMirror Advanced desktop app — pick your platform:',
     choices: [
       { value: 'win-x64', label: 'Windows', description: 'Installer (.exe), 64-bit.' },
       {

@@ -54,7 +54,7 @@
  * only writes by OTHER programs trip the guard.
  */
 
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 
@@ -92,14 +92,14 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
 export interface DiskState {
   mtimeMs: number;
   size: number;
-  /** sha256 of the bytes CardMirror last read from / wrote to the
+  /** sha256 of the bytes CardMirror Advanced last read from / wrote to the
    *  path, when the caller had them in hand. Lets the changed-on-disk
    *  guard distinguish metadata churn from real edits: cloud sync
    *  layers rewrite mtimes without touching content — rclone mounts
    *  restat after upload finalization, Dropbox touches timestamps
    *  during sync (field report 2026-08-06, Ethan, Linux + rclone:
    *  every second save refused as changed-on-disk with only
-   *  CardMirror writing). */
+   *  CardMirror Advanced writing). */
   contentHash?: string;
 }
 
@@ -107,7 +107,7 @@ function hashOf(buf: Buffer): string {
   return createHash('sha256').update(buf).digest('hex');
 }
 
-/** CANDIDATE baselines: what CardMirror last read from / wrote to a
+/** CANDIDATE baselines: what CardMirror Advanced last read from / wrote to a
  *  path, whoever asked. Consulted only when a window registers the
  *  path as its open document (`claimBaseline`), never by a save. */
 const lastReadState = new Map<string, DiskState>();
@@ -268,8 +268,9 @@ async function writeAtomic(
   beforeRename?: () => Promise<void>,
 ): Promise<void> {
   const dir = path.dirname(filePath);
-  const tmpPath = path.join(dir, `.${path.basename(filePath)}.cmtmp`);
-  await fs.writeFile(tmpPath, buf, mode !== undefined ? { mode } : {});
+  const tmpPath = path.join(dir, `.${path.basename(filePath)}.${randomUUID()}.cmtmp`);
+  // Exclusive creation prevents a pre-planted symlink from redirecting the save.
+  await fs.writeFile(tmpPath, buf, { flag: 'wx', mode: mode ?? 0o600 });
   // Second look before the rename: writing the tmp file takes real time
   // on a big document, and a synced-down remote version landing in that
   // gap would be replaced by the rename with the guard none the wiser.
@@ -339,8 +340,7 @@ async function writeAtomic(
       );
     }
     // Best-effort: the same scanner hold that blocked the rename may
-    // still pin the tmp; the next save rewrites the same tmp path, so
-    // a leftover never accumulates.
+    // still pin the tmp; a leftover is a complete recovery copy.
     await fs.unlink(tmpPath).catch(() => {});
   }
 }
@@ -393,7 +393,7 @@ export function saveExistingDoc(
           }
         }
         if (!identicalContent) {
-          throw changedOnDiskError(filePath, 'changed on disk after CardMirror last read or wrote it');
+          throw changedOnDiskError(filePath, 'changed on disk after CardMirror Advanced last read or wrote it');
         }
       }
     }
@@ -403,7 +403,7 @@ export function saveExistingDoc(
       if (opts?.force) return;
       const again = await fs.stat(filePath);
       if (again.mtimeMs !== st.mtimeMs || again.size !== st.size) {
-        throw changedOnDiskError(filePath, 'changed on disk while CardMirror was writing it');
+        throw changedOnDiskError(filePath, 'changed on disk while CardMirror Advanced was writing it');
       }
     });
     await recordDiskStateFromDisk(filePath, buf);

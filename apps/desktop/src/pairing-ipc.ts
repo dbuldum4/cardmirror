@@ -77,8 +77,8 @@ const RELAY_CLIENT_ROUTING_HEADER = 'X-CardMirror-Routing';
  *  the token into the artifact. For `desktop:dev` (launched from a shell) the
  *  env var is read directly at runtime. */
 const DEFAULT_RELAY_URL =
-  process.env.PAIRING_RELAY_URL || 'https://scouting-assistant.up.railway.app/relay';
-const DEFAULT_RELAY_TOKEN = process.env.PAIRING_TOKEN || BUILT_IN_RELAY_TOKEN || 'dev-pairing-token';
+  process.env.PAIRING_RELAY_URL || '';
+const DEFAULT_RELAY_TOKEN = process.env.PAIRING_TOKEN || BUILT_IN_RELAY_TOKEN || '';
 
 interface PairingConfig {
   enabled: boolean;
@@ -531,7 +531,7 @@ let lastPollTag = '';
 
 /** One catch-up/poll cycle: pull our mailbox and process it. */
 async function pollOnce(): Promise<void> {
-  if (polling || !config.enabled) return;
+  if (polling || !config.enabled || !relayUrl()) return;
   void maybeRenewEntitlement();
   polling = true;
   try {
@@ -665,7 +665,7 @@ function startFallbackPolling(): void {
  *  paces a low-frequency belt-and-suspenders catch-up. */
 function applyDelivery(): void {
   stopDelivery();
-  if (!config.enabled) {
+  if (!config.enabled || !relayUrl()) {
     console.log('[pairing] delivery off');
     return;
   }
@@ -736,6 +736,7 @@ export function registerPairingIpc(): void {
         relayUrl: typeof cfg?.relayUrl === 'string' ? cfg.relayUrl : '',
         relayToken: typeof cfg?.relayToken === 'string' ? cfg.relayToken : '',
       };
+      if (config.enabled && !relayUrl()) throw new Error('Configure a custom relay URL before enabling collaboration.');
       // Only materialize a keypair once the user actually turns sharing on,
       // so a fresh install that never enables it writes no key file.
       const ownCode = config.enabled ? ks().ownPublicCode() : '';

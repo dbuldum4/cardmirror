@@ -19,6 +19,7 @@ import {
   type FootnoteContent,
   type FootnoteRun,
 } from '../schema/footnotes.js';
+import { isSafeLinkHref } from '../schema/marks.js';
 import { isAnyOverlayOpen } from './overlay-stack.js';
 
 let openEl: HTMLElement | null = null;
@@ -32,13 +33,14 @@ function closePopover(): void {
 }
 
 function renderRun(run: FootnoteRun): HTMLElement {
-  const el = document.createElement(run.link ? 'a' : 'span');
+  const safeLink = run.link && isSafeLinkHref(run.link) ? run.link : null;
+  const el = document.createElement(safeLink ? 'a' : 'span');
   el.textContent = run.text;
   if (run.bold) el.style.fontWeight = '700';
   if (run.italic) el.style.fontStyle = 'italic';
   if (run.underline) el.style.textDecoration = 'underline';
-  if (run.link && el instanceof HTMLAnchorElement) {
-    el.href = run.link;
+  if (safeLink && el instanceof HTMLAnchorElement) {
+    el.href = safeLink;
     el.target = '_blank';
     el.rel = 'noopener noreferrer';
   }

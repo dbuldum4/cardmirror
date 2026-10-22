@@ -437,7 +437,7 @@ export function fallbackNodeType(info: StyleInfo | undefined): string | null {
  *  otherwise be silently dropped on import.
  *
  *  The export side always normalizes back to the modern styleId,
- *  so round-tripping an old file through CardMirror produces a
+ *  so round-tripping an old file through CardMirror Advanced produces a
  *  doc with current rStyle ids — no need to track which dialect
  *  the file came from. */
 export const RSTYLE_TO_MARK: Record<string, string> = {

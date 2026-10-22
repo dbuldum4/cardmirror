@@ -1,11 +1,11 @@
 /**
- * Public API for CardMirror.
+ * Public API for CardMirror Advanced.
  *
  * Four layers:
  *   - Schema:   the ProseMirror schema (typed-tree document model).
  *   - Import:   .docx → schema doc.
  *   - Export:   schema doc → .docx.
- *   - Native:   schema doc ↔ .cmir (CardMirror's lossless native
+ *   - Native:   schema doc ↔ .cmir (CardMirror Advanced's lossless native
  *               file format, no Verbatim round-trip).
  */
 

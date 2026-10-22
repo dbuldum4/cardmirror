@@ -1,7 +1,7 @@
-# CardMirror relay (self-hosting)
+# CardMirror Advanced relay (self-hosting)
 
-The server behind CardMirror's collaboration features — both **card
-sharing** (store-and-forward mailbox) and **co-editing** (real-time
+The self-hosted server for CardMirror Advanced's collaboration features — both
+**card sharing** (store-and-forward mailbox) and **co-editing** (real-time
 session rooms). Everything is **end-to-end encrypted by the app** —
 this server only ever sees opaque ciphertext, a hashed routing code,
 and timestamps. Mailbox messages are forgotten after 3 hours whether
@@ -11,8 +11,10 @@ for 7 days. New cards and session updates are live-pushed to connected
 apps over SSE; the app also catches up by polling on every reconnect,
 so nothing is lost while a machine is offline.
 
-Run your own if you'd rather not use the official relay. Everyone
-sharing cards with each other must point at the same relay.
+CardMirror Advanced does not provide a hosted relay. Deploy this server and
+configure its URL and token in each participating app. Everyone sharing cards
+or joining a co-editing session must point at the same relay. This independent
+fork does not use the original project's hosted relay by default.
 
 ## Quick start (docker compose)
 
@@ -21,7 +23,7 @@ cd relay
 RELAY_TOKEN=$(openssl rand -hex 24) docker compose up -d
 ```
 
-Then in CardMirror on every machine: **Settings → Collaboration** →
+Then in CardMirror Advanced on every machine: **Settings → Collaboration** →
 **Custom relay URL** = `http://<your-host>:8410/relay`, **Custom relay
 token** = the same token. Use HTTPS (a reverse proxy such as Caddy or
 your platform's TLS) for anything beyond a LAN.
@@ -47,6 +49,23 @@ a VPS…). Requirements:
 
 Health check: `GET /relay/health` → `{"ok": true}` (no auth).
 
+## Development tests
+
+From the repository root, create an isolated Python environment and install the
+runtime and HTTP test dependencies:
+
+```sh
+python3 -m venv work/relay-venv
+work/relay-venv/bin/python -m pip install --upgrade 'pip>=26.2'
+work/relay-venv/bin/python -m pip install -r relay/requirements-dev.txt
+work/relay-venv/bin/python -m unittest discover -s relay -p 'test_*.py' -v
+```
+
+The tests use in-process ASGI requests and a fake database session. They do not
+run application startup, require PostgreSQL or production secrets, or contact
+external services. Pure body-limit tests can also run with only Python's standard
+library: `python3 -m unittest discover -s relay -p 'test_body_limits.py' -v`.
+
 ## Notes
 
 - One `RELAY_TOKEN` covers both features — card sharing and co-editing
@@ -69,3 +88,7 @@ Health check: `GET /relay/health` → `{"ok": true}` (no auth).
   and your users' documents — curate deliberately. Individual users
   who want arbitrary repos can instead run
   `__plugins('community-on')` in the app's console.
+
+The original [PolyForm Noncommercial License 1.0.0 and required notice](../LICENSE)
+remain in effect, including Copyright (c) 2026 Anthony Trufanov. See the repository's
+[third-party notices](../THIRD-PARTY-NOTICES.md) for dependency attributions.

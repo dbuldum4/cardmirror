@@ -118,7 +118,7 @@ export interface PairingInboxItemIpc {
 /** One document window in the Switch Window list (`host:list-windows`). */
 export interface WindowListEntry {
   windowId: number;
-  /** OS title — `${filename} — CardMirror`, or `CardMirror` when untitled. */
+  /** OS title — `${filename} — CardMirror Advanced`, or `CardMirror Advanced` when untitled. */
   title: string;
   /** Filenames of the window's saved docs (untitled docs are omitted). */
   docNames: string[];

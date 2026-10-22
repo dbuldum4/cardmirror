@@ -17,7 +17,8 @@
  * but don't generate from scratch.
  */
 
-import { unzipSync, zipSync } from 'fflate';
+import { unzipBounded } from '../safe-containers.js';
+import { zipSync } from 'fflate';
 import { canonicalStylesXml } from './styles.js';
 import { XML_PROLOG, escText } from './xml.js';
 
@@ -37,14 +38,7 @@ export class Docx {
   /** Load a .docx from a Uint8Array (Node Buffer / browser ArrayBuffer-derived). */
   static async load(bytes: Uint8Array | ArrayBuffer): Promise<Docx> {
     const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-    const entries = unzipSync(u8);
-    const parts = new Map<string, Uint8Array>();
-    for (const [path, data] of Object.entries(entries)) {
-      // Skip explicit directory entries — parts are files; consumers
-      // (`paths()` copy-through, media enumeration) expect file paths.
-      if (path.endsWith('/')) continue;
-      parts.set(path, data);
-    }
+    const parts = unzipBounded(u8);
     return new Docx(parts);
   }
 
@@ -114,7 +108,7 @@ export class Docx {
     this.writeText('[Content_Types].xml', updated);
   }
 
-  /** Write the CardMirror `docId` as a custom document property
+  /** Write the CardMirror Advanced `docId` as a custom document property
    *  (`docProps/custom.xml`) — verified to survive a real Word round-trip. */
   async writeDocId(docId: string): Promise<void> {
     await this.writeCustomProperty('cmirDocId', docId);
@@ -171,7 +165,7 @@ export class Docx {
     }
   }
 
-  /** Read the CardMirror `docId` custom property, or null if absent. */
+  /** Read the CardMirror Advanced `docId` custom property, or null if absent. */
   async readDocId(): Promise<string | null> {
     return this.readCustomProperty('cmirDocId');
   }
@@ -188,7 +182,7 @@ export class Docx {
    *  in `docProps/app.xml` (the standard generator fields — Word shows
    *  them nowhere and overwrites both on its own save, so they mean
    *  "last written by"), plus the `cmirGenerator` custom property, which
-   *  Word preserves, so "made by CardMirror at some point" survives a
+   *  Word preserves, so "made by CardMirror Advanced at some point" survives a
    *  Word round-trip. Merges into an existing app.xml (a Word-authored
    *  file re-saved here keeps its page counts and the like); creates the
    *  part, its content type and its package relationship otherwise. */

@@ -129,3 +129,39 @@ describe('write scope (host:write-file-at-path)', () => {
     expect(await isWriteAllowed(path.join(dir, 'docs', 'other.cmir'))).toBe(false);
   });
 });
+
+describe('symlink boundaries', () => {
+  it.skipIf(process.platform === 'win32')('denies reads and new writes through an escaping directory symlink', async () => {
+    const root = path.join(dir, 'library');
+    const secret = await touch(path.join(dir, 'private', 'secret.cmir'));
+    await fs.mkdir(root);
+    await fs.symlink(path.dirname(secret), path.join(root, 'escape'), 'dir');
+    setLibraryRoots([root]);
+    expect(await isReadAllowed(path.join(root, 'escape', 'secret.cmir'))).toBe(false);
+    expect(await isWriteAllowed(path.join(root, 'escape', 'new', 'file.docx'))).toBe(false);
+    expect(await isWriteAllowed(path.join(root, 'new', 'file.docx'))).toBe(true);
+  });
+  it.skipIf(process.platform === 'win32')('preserves symlinked roots and aliases into an approved root', async () => {
+    const real = await touch(path.join(dir, 'real', 'file.cmir'));
+    await fs.symlink(path.dirname(real), path.join(dir, 'alias'), 'dir');
+    setLibraryRoots([path.join(dir, 'alias')]);
+    expect(await isReadAllowed(real)).toBe(true);
+    expect(await isWriteAllowed(path.join(dir, 'alias', 'new.cmir'))).toBe(true);
+  });
+  it.skipIf(process.platform === 'win32')('pins an explicit symlink file grant to its original target', async () => {
+    const first = await touch(path.join(dir, 'first.cmir'));
+    const second = await touch(path.join(dir, 'second.cmir'));
+    const alias = path.join(dir, 'picked.cmir');
+    await fs.symlink(first, alias);
+    grantReadPath(alias);
+    expect(await isReadAllowed(alias)).toBe(true);
+    await fs.unlink(alias);
+    await fs.symlink(second, alias);
+    expect(await isReadAllowed(alias)).toBe(false);
+    expect(await isReadAllowed(first)).toBe(true);
+  });
+  it('closes the legacy import gate before its delayed disk write', async () => {
+    expect(await grantLegacyRecents([])).toBe(true);
+    expect(await grantLegacyRecents([path.join(dir, 'unapproved.cmir')])).toBe(false);
+  });
+});

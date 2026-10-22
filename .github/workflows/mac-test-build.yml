@@ -15,8 +15,12 @@ name: macOS test build
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    if: github.repository == 'dbuldum4/cardmirror-advanced'
     name: Build mac dmg
     runs-on: macos-latest
     timeout-minutes: 30

@@ -144,7 +144,7 @@ export function buildInDocCopyAttrs(doc: PMNode, headingId: string): BuildZoneOu
 export function buildZoneErrorMessage(reason: BuildZoneReason | undefined): string {
   switch (reason) {
     case 'no-heading-id':
-      return 'That heading has no stable id — open and save the source in CardMirror, then retry.';
+      return 'That heading has no stable id — open and save the source in CardMirror Advanced, then retry.';
     case 'no-section':
       return 'Could not read that section from the source.';
     case 'empty-section':

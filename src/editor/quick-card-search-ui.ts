@@ -13,7 +13,7 @@
  *   - `c ` → search ribbon commands only
  *   - `s ` → search settings (top-level tabs + individual settings);
  *            selecting one opens that tab and scrolls to the setting
- *   - `w ` → switch to another CardMirror window (desktop only), most
+ *   - `w ` → switch to another CardMirror Advanced window (desktop only), most
  *            recently used first; the `switchWindow` command opens the
  *            bar with this prefix typed
  *   - `f ` → search `.cmir` files under the configured root. Enter
@@ -746,14 +746,14 @@ const categoryLabel = (id: SettingsCategory): string =>
   CATEGORY_TABS.find((c) => c.id === id)?.label ?? '';
 
 /** Row label for a window: its saved docs' names, else its title minus
- *  the app suffix (a home-screen or untitled window is just "CardMirror"). */
+ *  the app suffix (a home-screen or untitled window is just "CardMirror Advanced"). */
 export function windowLabel(w: WindowListEntry): string {
   if (w.docNames.length > 0) return w.docNames.join(' · ');
-  const title = w.title.replace(/\s+—\s+CardMirror$/, '').trim();
-  return title && title !== 'CardMirror' ? title : 'Untitled window';
+  const title = w.title.replace(/\s+—\s+CardMirror(?: Advanced)?$/, '').trim();
+  return title && !/^CardMirror(?: Advanced)?$/.test(title) ? title : 'Untitled window';
 }
 
-/** Window source (`w `) — every OTHER CardMirror window, in the
+/** Window source (`w `) — every OTHER CardMirror Advanced window, in the
  *  most-recently-focused order main hands back, so the top row is the
  *  window you were just in. Every query word must hit the label or title. */
 export function searchWindowSource(windows: WindowListEntry[], query: string): PaletteResult[] {
@@ -806,7 +806,7 @@ function searchSettingsSource(query: string): PaletteResult[] {
   if (q.length > 0 && aboutKeys.some((k) => k.startsWith(q) || q.startsWith(k))) {
     results.unshift({
       source: 'settings',
-      name: `CardMirror ${appVersion}`,
+      name: `CardMirror Advanced ${appVersion}`,
       meta: 'About this install',
       matchedName: true,
       snippet: null,
@@ -1559,7 +1559,7 @@ class QuickCardSearchUI {
     this.results = searchWindowSource(this.windowList, query);
     this.emptyText = this.windowList.some((w) => !w.isOwnWindow)
       ? 'No matching windows.'
-      : 'No other CardMirror windows are open.';
+      : 'No other CardMirror Advanced windows are open.';
     this.finishSearch();
   }
 

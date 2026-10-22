@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { DOMParser as PMDOMParser } from 'prosemirror-model';
+import { DOMSerializer, DOMParser as PMDOMParser } from 'prosemirror-model';
 import { schema, isSafeLinkHref } from '../../src/schema/index.js';
 
 function parse(html: string) {
@@ -31,3 +31,13 @@ describe('link mark href scheme filter', () => {
     expect(isSafeLinkHref('/relative/path')).toBe(true);
   });
 });
+
+ describe('links created through native JSON, OOXML, or collaboration', () => {
+   it.each(['java\tscript:alert(1)', 'java\nscript:alert(1)', '\u0000javascript:alert(1)', 'data:text/html,x', 'file:///tmp/x.html'])('does not render an unsafe href %j', (href) => {
+     expect(isSafeLinkHref(href)).toBe(false);
+     const doc = schema.nodeFromJSON({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'evidence', marks: [{ type: 'link', attrs: { href } }] }] }] });
+     const dom = DOMSerializer.fromSchema(schema).serializeFragment(doc.content) as DocumentFragment;
+     expect(dom.textContent).toBe('evidence');
+     expect(dom.querySelector('a')?.hasAttribute('href')).toBe(false);
+   });
+ });

@@ -23,7 +23,7 @@ interface InstalledPlugin {
   author?: string;
   description?: string;
   repo?: string;
-  /** Set when the install needs a newer CardMirror (the required
+  /** Set when the install needs a newer CardMirror Advanced (the required
    *  version). Listed disabled rather than hidden — an invisible
    *  install looks like data loss and can't be uninstalled. */
   incompatible?: string;
@@ -62,13 +62,13 @@ export function renderPluginsPanel(container: HTMLElement): void {
   // (webFrame.executeJavaScript), so they must be unreachable while the
   // master switch that promises to gate plugins is off.
   if (!settings.get('pluginsEnabled')) {
-    placeholder(container, 'Enable plugins above, then restart CardMirror.');
+    placeholder(container, 'Enable plugins above, then restart CardMirror Advanced.');
     return;
   }
   // Switch is on but boot ran with it off — the window registry was never
   // installed, so a loaded bundle's registration would silently no-op.
   if (typeof window.__registerCardMirrorPlugin !== 'function') {
-    placeholder(container, 'Restart CardMirror to activate plugins.');
+    placeholder(container, 'Restart CardMirror Advanced to activate plugins.');
     return;
   }
 
@@ -153,7 +153,7 @@ export function renderPluginsPanel(container: HTMLElement): void {
         // Listed but inert: main refuses to serve its bundle, so the
         // toggle would lie. The row stays so the user can see it and
         // uninstall it (hidden reads as data loss).
-        label.textContent += ` — needs CardMirror ${p.incompatible} or newer`;
+        label.textContent += ` — needs CardMirror Advanced ${p.incompatible} or newer`;
         row.classList.add('pmd-plugins-row-incompatible');
       }
       const enable = document.createElement('input');
@@ -309,7 +309,7 @@ export function renderPluginsPanel(container: HTMLElement): void {
     const consent = await confirmDialog(
       `Install ${p.name} v${p.version} by ${p.author ?? 'an unknown author'} ` +
         `from github.com/${res.ownerRepo}? ` +
-        'This plugin runs with full access to CardMirror and your documents.',
+        'This plugin runs with full access to CardMirror Advanced and your documents.',
     );
     if (!consent) {
       await host!.pluginInstallDiscard(res.pending);

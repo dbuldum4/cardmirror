@@ -56,7 +56,7 @@ const TOOLS = [
   {
     name: 'list_debate_files',
     description:
-      'List CardMirror (.cmir) and Word (.docx) debate files under the configured folders. ' +
+      'List CardMirror Advanced (.cmir) and Word (.docx) debate files under the configured folders. ' +
       'Returns relative paths usable with read_debate_file. Optional substring filter.',
     inputSchema: {
       type: 'object',
@@ -74,7 +74,7 @@ const TOOLS = [
       'Read one debate file as text. `path` is a path returned by list_debate_files (or an ' +
       "absolute path inside a configured folder). `form` is 'text' (default: legible " +
       "markdown-flavored rendering — ==highlighted== is the read-aloud layer) or 'json' " +
-      '(full-fidelity uncompressed CardMirror envelope; can be very large).',
+      '(full-fidelity uncompressed CardMirror Advanced envelope; can be very large).',
     inputSchema: {
       type: 'object',
       properties: {

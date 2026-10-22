@@ -41,7 +41,7 @@ export function installPluginCommunityGate(): void {
     arm();
     return on
       ? 'community plugin installs ENABLED — the installer now accepts any GitHub repo. ' +
-          'Plugins run with full access to CardMirror and your documents; only install sources you trust. ' +
+          'Plugins run with full access to CardMirror Advanced and your documents; only install sources you trust. ' +
           "Disable with __plugins('community-off')."
       : 'community plugin installs disabled (curated list only).';
   };

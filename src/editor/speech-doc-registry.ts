@@ -4,7 +4,7 @@
  * Tracks which open doc is currently designated as the "speech doc"
  * — the destination for `sendToSpeech` (\` / Alt-\`). Verbatim's
  * equivalent is a single global `ActiveSpeechDoc` string (filename);
- * we key off a per-doc uid instead because every CardMirror doc
+ * we key off a per-doc uid instead because every CardMirror Advanced doc
  * already carries a stable uid for journal recovery.
  *
  * Two layers:

@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 export default defineConfig({
   test: {
     globals: true,
+    // Office decryption performs the real password KDF; allow slower CI CPUs.
+    testTimeout: 20_000,
     include: ['tests/**/*.test.ts'],
     // Geometry stubs jsdom lacks (Range.getClientRects) — ProseMirror
     // reads them on any selection reconcile, so a test that moves focus
@@ -45,14 +47,14 @@ export default defineConfig({
       // to drive it.
       {
         find: /^electron$/,
-        replacement: resolve(__dirname, 'tests/desktop/_electron-stub.ts'),
+        replacement: resolve(import.meta.dirname, 'tests/desktop/_electron-stub.ts'),
       },
       // The card-cutter engine package is never present under test —
       // resolve its dynamic import to the same inert no-op stub the
       // production build falls back to.
       {
         find: /^@cardcutter\/browser$/,
-        replacement: resolve(__dirname, 'src/editor/card-cutter-stub.ts'),
+        replacement: resolve(import.meta.dirname, 'src/editor/card-cutter-stub.ts'),
       },
     ],
   },

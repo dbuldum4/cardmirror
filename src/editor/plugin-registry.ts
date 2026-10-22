@@ -135,7 +135,7 @@ export function registerPluginDefinition(
   if (def.apiVersion !== PLUGIN_API_VERSION) {
     return {
       ok: false,
-      error: `unsupported apiVersion ${String(def.apiVersion)} (this CardMirror supports ${PLUGIN_API_VERSION})`,
+      error: `unsupported apiVersion ${String(def.apiVersion)} (this CardMirror Advanced supports ${PLUGIN_API_VERSION})`,
     };
   }
   // Ids this plugin already owns — so a re-registration (e.g. re-enable

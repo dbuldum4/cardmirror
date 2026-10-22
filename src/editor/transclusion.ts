@@ -2,7 +2,7 @@
  * Transclusion "live zones" — core logic (see TRANSCLUSION_PLAN.md).
  *
  * A live zone (`transclusion_ref` node) renders the contents under a heading
- * in another CardMirror file. This module is the PURE, view-independent core:
+ * in another CardMirror Advanced file. This module is the PURE, view-independent core:
  * extracting a section from a source doc, hashing it, building the node,
  * detaching it back to plain content, computing the doc-relative source path,
  * and the cycle-identity helpers. The NodeView (transclusion-nodeview.ts) and

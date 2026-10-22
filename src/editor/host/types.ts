@@ -2,7 +2,7 @@
  * Host interface — the platform abstraction the editor talks to for
  * everything that isn't pure DOM manipulation.
  *
- * Why this exists: CardMirror runs in three contexts (regular browser
+ * Why this exists: CardMirror Advanced runs in three contexts (regular browser
  * tab, installed PWA, native desktop binary wrapped by Electron /
  * Tauri). Each context offers a different way to open files, save
  * files, store settings, etc. The editor proper doesn't care which
@@ -26,7 +26,7 @@ import type { LearnOp } from '../learn-store.js';
  *  through verbatim; BrowserHost uses it to build the `<input
  *  accept="…">` attribute and the `showSaveFilePicker` types arg. */
 export interface FileFilter {
-  /** Human-readable label shown in the dialog (e.g. "CardMirror
+  /** Human-readable label shown in the dialog (e.g. "CardMirror Advanced
    *  document"). */
   name: string;
   /** Extensions without the leading dot (e.g. `["docx"]`, `["cmir"]`,
@@ -100,7 +100,7 @@ export interface SaveAsOptions {
  *  close. On launch the host returns any stragglers from a previous
  *  session that crashed before they cleared.
  *
- *  The doc itself is stored as `bytes` in CardMirror native (`.cmir`)
+ *  The doc itself is stored as `bytes` in CardMirror Advanced native (`.cmir`)
  *  serialization — lossless and cheap to (de)serialize. The doc's
  *  *intended* on-disk format and handle are tracked separately so a
  *  recovered `.docx` doc can keep targeting Word on its next save. */
@@ -147,7 +147,7 @@ export interface JournalEntry {
    *  across relaunches and mode switches until the first manual save lands.
    *  Absent for normal journals. */
   recoveredFromSavedAt?: string;
-  /** Doc content as CardMirror native (`.cmir`) bytes — the editor
+  /** Doc content as CardMirror Advanced native (`.cmir`) bytes — the editor
    *  passes this to `parseNative` on recovery. */
   bytes: Uint8Array;
 }

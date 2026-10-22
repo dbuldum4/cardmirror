@@ -1,5 +1,5 @@
 /**
- * CardMirror native file format (`.cmir`).
+ * CardMirror Advanced native file format (`.cmir`).
  *
  * The "no-roundtrip" save path: serialize the ProseMirror document
  * straight to JSON with a small format envelope, persist it as-is,
@@ -10,14 +10,14 @@
  *
  * Users still get full `.docx` support for sharing with Verbatim
  * teammates; `.cmir` is the long-term canonical form for docs that
- * live entirely inside the CardMirror ecosystem.
+ * live entirely inside the CardMirror Advanced ecosystem.
  *
  * Format shape (current `formatVersion`):
  *
  *   {
  *     "format": "cardmirror-doc",
  *     "formatVersion": 1,
- *     "createdBy": "CardMirror 0.x",
+ *     "createdBy": "CardMirror Advanced 0.x",
  *     "createdAt": "2026-…",
  *     "doc": { ...PM-doc JSON },
  *     "threads": [ ...Thread[] ]   // optional
@@ -28,6 +28,7 @@
  * can ride formatVersion bumps; v1 keeps it simple.
  */
 
+import { checkDocumentSize } from '../safe-containers.js';
 import type { Node as PMNode } from 'prosemirror-model';
 import { schema } from '../schema/index.js';
 import { salvageDoc, type DroppedNode } from '../schema/salvage.js';
@@ -44,7 +45,7 @@ import {
 import type { Thread } from '../editor/comments-plugin.js';
 import { gzip, gzipAsync, gunzip, isGzip } from './codec.js';
 
-/** Magic identifier present in every CardMirror native file. Rejects
+/** Magic identifier present in every CardMirror Advanced native file. Rejects
  *  arbitrary JSON files. */
 const FORMAT_ID = 'cardmirror-doc';
 
@@ -78,7 +79,7 @@ export interface SerializeNativeOptions {
    *  are none. */
   threads?: readonly Thread[];
   /** App version string written into `createdBy`. Defaults to a
-   *  generic "CardMirror" if not supplied. */
+   *  generic "CardMirror Advanced" if not supplied. */
   appVersion?: string;
   /** Stable per-document UUID (see `NativeFile.docId`). Written only
    *  when provided, so callers that don't track it are unaffected. */
@@ -148,7 +149,7 @@ function buildNativeEnvelope(doc: PMNode, opts: SerializeNativeOptions): Uint8Ar
   const file: NativeFile = {
     format: FORMAT_ID,
     formatVersion: FORMAT_VERSION,
-    createdBy: opts.appVersion ?? 'CardMirror',
+    createdBy: opts.appVersion ?? 'CardMirror Advanced',
     createdAt: new Date().toISOString(),
     doc: tripwireForSave(doc).toJSON(),
   };
@@ -162,7 +163,7 @@ function buildNativeEnvelope(doc: PMNode, opts: SerializeNativeOptions): Uint8Ar
 }
 
 /** Serialize a ProseMirror doc + optional threads to bytes in the
- *  CardMirror native format. */
+ *  CardMirror Advanced native format. */
 export function serializeNative(
   doc: PMNode,
   opts: SerializeNativeOptions = {},
@@ -224,13 +225,13 @@ export interface ParseNativeResult {
 
 /** The "damaged file" refusal — a distinct class so open flows can
  *  tell "this parsed but is structurally invalid" (salvage may apply)
- *  from "these bytes aren't a CardMirror file at all". */
+ *  from "these bytes aren't a CardMirror Advanced file at all". */
 export class NativeDamagedError extends Error {
   override name = 'NativeDamagedError';
 }
 
-/** Parse CardMirror native bytes back into a doc + threads. Throws
- *  with a descriptive message when the bytes aren't a valid CardMirror
+/** Parse CardMirror Advanced native bytes back into a doc + threads. Throws
+ *  with a descriptive message when the bytes aren't a valid CardMirror Advanced
  *  file — caller can show that to the user. */
 export function parseNative(bytes: Uint8Array): ParseNativeResult {
   return parseNativeImpl(bytes, false);
@@ -255,6 +256,7 @@ function parseNativeImpl(
   bytes: Uint8Array,
   salvage: boolean,
 ): ParseNativeResult & { dropped?: DroppedNode[] } {
+  checkDocumentSize(bytes.length);
   // An empty read is the tell-tale of a cloud "online-only" placeholder
   // (Dropbox / iCloud Drive) that hasn't downloaded: `readFile` hands back 0
   // bytes instead of the real content, which would otherwise die cryptically as
@@ -290,15 +292,15 @@ function parseNativeImpl(
     );
   }
   if (typeof file.formatVersion !== 'number') {
-    throw new Error('CardMirror file is missing formatVersion.');
+    throw new Error('CardMirror Advanced file is missing formatVersion.');
   }
   if (file.formatVersion > FORMAT_VERSION) {
     throw new Error(
-      `CardMirror file uses formatVersion ${file.formatVersion}, which is newer than this build supports (max ${FORMAT_VERSION}). Update CardMirror to read this file.`,
+      `CardMirror Advanced file uses formatVersion ${file.formatVersion}, which is newer than this build supports (max ${FORMAT_VERSION}). Update CardMirror Advanced to read this file.`,
     );
   }
   if (file.doc === undefined) {
-    throw new Error('CardMirror file is missing its doc field.');
+    throw new Error('CardMirror Advanced file is missing its doc field.');
   }
   // Defensive: stamp any heading whose `id` came in null. Old
   // files written before the alpha.6 F2 fix can contain
@@ -354,7 +356,7 @@ function parseNativeImpl(
     }
   } catch (err) {
     throw new NativeDamagedError(
-      `This CardMirror file is damaged and can’t be opened (${
+      `This CardMirror Advanced file is damaged and can’t be opened (${
         err instanceof Error ? err.message : String(err)
       }).`,
     );

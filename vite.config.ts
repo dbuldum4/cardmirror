@@ -15,8 +15,8 @@ import path from 'node:path';
 // repo. The app imports it dev-only and dynamically (see
 // card-cutter-port.ts, `@vite-ignore`d + try/caught), so when the
 // sibling is absent the alias just never resolves — harmless.
-const cardCutterEntry = path.resolve(__dirname, '../card-cutter/src/browser.ts');
-const cardCutterStub = path.resolve(__dirname, 'src/editor/card-cutter-stub.ts');
+const cardCutterEntry = path.resolve(import.meta.dirname, '../card-cutter/src/browser.ts');
+const cardCutterStub = path.resolve(import.meta.dirname, 'src/editor/card-cutter-stub.ts');
 
 export default defineConfig(({ command }) => {
   // The card-cutter engine is experimental and NOT shipped: a
@@ -44,7 +44,7 @@ export default defineConfig(({ command }) => {
   const enablePWA =
     command === 'build' && !isElectronRenderer && !process.env['NO_PWA'];
 
-  // CardMirror Lite (VITE_LITE=1): the no-AI / no-internet build
+  // CardMirror Advanced Lite (VITE_LITE=1): the no-AI / no-internet build
   // variant (src/editor/lite.ts). The web deployment for it ships a
   // Content-Security-Policy that makes "no outbound requests" a
   // BROWSER-ENFORCED guarantee, emitted as a Cloudflare `_headers`
@@ -54,7 +54,7 @@ export default defineConfig(({ command }) => {
     name: 'cardmirror-lite-headers',
     closeBundle() {
       if (!isLite || command !== 'build') return;
-      const outDir = path.resolve(__dirname, process.env['VITE_OUT_DIR'] ?? 'dist');
+      const outDir = path.resolve(import.meta.dirname, process.env['VITE_OUT_DIR'] ?? 'dist');
       // connect-src 'self': the app may load ITSELF (and the service
       // worker then serves it offline) — and nothing else, ever.
       // 'wasm-unsafe-eval' stays off: Lite ships no wasm consumers.
@@ -88,11 +88,11 @@ export default defineConfig(({ command }) => {
           ? [
               {
                 find: /^.*\/llm-endpoints\.js$/,
-                replacement: path.resolve(__dirname, 'src/editor/ai/llm-endpoints-lite.ts'),
+                replacement: path.resolve(import.meta.dirname, 'src/editor/ai/llm-endpoints-lite.ts'),
               },
               {
                 find: /^.*\/relay-endpoint\.js$/,
-                replacement: path.resolve(__dirname, 'src/editor/collab/relay-endpoint-lite.ts'),
+                replacement: path.resolve(import.meta.dirname, 'src/editor/collab/relay-endpoint-lite.ts'),
               },
             ]
           : []),
@@ -114,7 +114,7 @@ export default defineConfig(({ command }) => {
               resolveId(source: string) {
                 if (source.endsWith('loro_wasm_bg.wasm')) {
                   return (
-                    path.resolve(__dirname, 'node_modules/loro-crdt/bundler/loro_wasm_bg.wasm') +
+                    path.resolve(import.meta.dirname, 'node_modules/loro-crdt/bundler/loro_wasm_bg.wasm') +
                     '?url'
                   );
                 }
@@ -135,8 +135,8 @@ export default defineConfig(({ command }) => {
             injectRegister: 'auto',
             includeAssets: ['favicon.png', 'apple-touch-icon.png'],
             manifest: {
-              name: 'CardMirror',
-              short_name: 'CardMirror',
+              name: 'CardMirror Advanced',
+              short_name: 'CardMirror Advanced',
               description:
                 'A debate-card editor that interoperates with Advanced Verbatim — cut, format, and organize evidence offline.',
               theme_color: '#2563eb',
@@ -171,7 +171,7 @@ export default defineConfig(({ command }) => {
         : []),
     ],
     server: {
-      fs: { allow: [path.resolve(__dirname), path.resolve(__dirname, '../card-cutter')] },
+      fs: { allow: [path.resolve(import.meta.dirname), path.resolve(import.meta.dirname, '../card-cutter')] },
       // Pre-transform the collab chain (and the loro wasm loader
       // behind it) on dev-server start. Without this, the renderer's
       // pairing catch-up poll dynamically imports collab-ui seconds
@@ -195,8 +195,8 @@ export default defineConfig(({ command }) => {
       ...(process.env['VITE_OUT_DIR'] ? { outDir: process.env['VITE_OUT_DIR'] } : {}),
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, 'index.html'),
-          timer: path.resolve(__dirname, 'timer.html'),
+          main: path.resolve(import.meta.dirname, 'index.html'),
+          timer: path.resolve(import.meta.dirname, 'timer.html'),
         },
       },
     },

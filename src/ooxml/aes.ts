@@ -1,7 +1,7 @@
 /**
  * Synchronous AES-CBC DECRYPTION (128/192/256-bit keys).
  *
- * Decrypt-only on purpose: CardMirror opens password-protected Office
+ * Decrypt-only on purpose: CardMirror Advanced opens password-protected Office
  * files but never writes encryption, so there is no cipher/encrypt
  * path here. Pure-JS (not Web Crypto) for the same reasons as
  * `sha512.ts` — portability across renderer / browser / node, and

@@ -26,14 +26,27 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: read
+
 jobs:
   prepare-release:
+    if: github.repository == 'dbuldum4/cardmirror-advanced'
     name: Create draft release for tag
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+          cache: 'npm'
+      - name: Require patched Electron before creating a release
+        run: |
+          npm --prefix apps/desktop ci
+          node apps/desktop/scripts/check-electron-runtime.cjs --require-patched-node
 
       - name: Extract release notes from CHANGELOG.md
         # Two-step extraction:
@@ -253,7 +266,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm --prefix apps/desktop run release
 
-      - name: Build and upload CardMirror Lite installer
+      - name: Build and upload CardMirror Advanced Lite installer
         # The no-AI / no-internet build variant (src/editor/lite.ts),
         # built from the same checkout AFTER the main publish. The
         # deliberate differences:
@@ -283,18 +296,18 @@ jobs:
           # which shipped the first Lite run with main-app names on
           # Linux and an empty upload glob.
           (cd apps/desktop && npx electron-builder --publish never \
-            -c.appId=com.cardmirror.lite \
-            -c.productName="CardMirror Lite" \
-            -c.mac.artifactName='CardMirror-Lite-${version}-${arch}.${ext}' \
-            -c.win.artifactName='CardMirror-Lite-Setup-${version}.${ext}' \
-            -c.linux.artifactName='cardmirror-lite-${version}.${ext}' \
-            -c.executableName='CardMirror Lite' \
-            -c.linux.executableName=cardmirror-lite)
+            -c.appId=io.github.dbuldum4.cardmirror-advanced.lite \
+            -c.productName="CardMirror Advanced Lite" \
+            -c.mac.artifactName='CardMirror-Advanced-Lite-${version}-${arch}.${ext}' \
+            -c.win.artifactName='CardMirror-Advanced-Lite-Setup-${version}.${ext}' \
+            -c.linux.artifactName='cardmirror-advanced-lite-${version}.${ext}' \
+            -c.executableName='CardMirror Advanced Lite' \
+            -c.linux.executableName=cardmirror-advanced-lite)
           shopt -s nullglob
-          files=(apps/desktop/release/CardMirror-Lite-*.dmg \
-                 apps/desktop/release/CardMirror-Lite-*.exe \
-                 apps/desktop/release/cardmirror-lite-*.AppImage \
-                 apps/desktop/release/cardmirror-lite-*.pacman)
+          files=(apps/desktop/release/CardMirror-Advanced-Lite-*.dmg \
+                 apps/desktop/release/CardMirror-Advanced-Lite-*.exe \
+                 apps/desktop/release/cardmirror-advanced-lite-*.AppImage \
+                 apps/desktop/release/cardmirror-advanced-lite-*.pacman)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No Lite artifacts found — naming regression?" >&2
             exit 1

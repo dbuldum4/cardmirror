@@ -1,5 +1,5 @@
 /**
- * Foreign clipboard HTML → CardMirror structure (smart paste conversion).
+ * Foreign clipboard HTML → CardMirror Advanced structure (smart paste conversion).
  *
  * Front-ends for the docx importer's assembly seam: classify Word
  * clipboard HTML (and, sharing the same run machinery, haku.cards
@@ -17,7 +17,7 @@
  * SCOPE (explicit design stance, 2026-07-16): this is a best-effort
  * convenience, deliberately NOT built to chase clipboard edge cases.
  * The full-fidelity path is and will remain opening the .docx in
- * CardMirror and copying from there — the real importer sees the real
+ * CardMirror Advanced and copying from there — the real importer sees the real
  * OOXML instead of Word's lossy HTML rendition of it. Extend this
  * module for failure modes that are common in the wild; resist
  * hardening it against exotic ones.
@@ -510,7 +510,7 @@ function runsToInlines(runs: HtmlRun[], nodeType: string): PMNode[] {
     // Font color is dropped on highlighted runs: the source's inline
     // color there is the tool's own contrast choice for its highlight
     // rendering (haku stamps color:#1b1b1c on every highlight span),
-    // and CardMirror's highlight mark already forces contrast per
+    // and CardMirror Advanced's highlight mark already forces contrast per
     // color band.
     if (rs.fontColor && rs.fontColor !== '000000' && !rs.highlight) {
       marks.push(schema.marks['font_color']!.create({ color: rs.fontColor }));
@@ -683,7 +683,7 @@ function convertViaImporter(html: string): PMNode | null {
 }
 
 /**
- * Convert Word clipboard HTML into a CardMirror doc, or null when the
+ * Convert Word clipboard HTML into a CardMirror Advanced doc, or null when the
  * HTML contains no recognizable debate structure (caller falls through
  * to the default paste). The caller is responsible for routing — this
  * assumes `detectPasteDialect` already said 'word'.
@@ -700,7 +700,7 @@ export function convertWordHtml(html: string): PMNode | null {
  * runs, 26/22pt `h1`/`h2` case headings) — exactly the visual-rules
  * path of the shared pipeline, with the class dictionary a natural
  * no-op. On top of that, `applyHakuBodyConventions` translates haku's
- * flattened data model back into CardMirror semantics (see its doc
+ * flattened data model back into CardMirror Advanced semantics (see its doc
  * comment). Known quirk, accepted for now: the source-file breadcrumb
  * paragraphs haku includes between cite and body (plain 11pt lines
  * naming the original pocket/hat/block) are indistinguishable from
@@ -787,7 +787,7 @@ function convertedEffectivePt(node: PMNode | null, parent: PMNode): number {
 // document's per-run size passed through (emitted only when haku's
 // "variable font size" mode is on; unsized runs fall back to the card's
 // minimum size). Field-tested rules (2026-07-16, user-specified) for
-// translating that back into CardMirror semantics, applied per card:
+// translating that back into CardMirror Advanced semantics, applied per card:
 //
 //  1. bold+underline → emphasis_mark (debaters' hand-emphasis, and what
 //     haku's ingestion left of original Emphasis) — UNLESS exactly 100%

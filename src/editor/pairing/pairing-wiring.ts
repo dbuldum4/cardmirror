@@ -113,7 +113,7 @@ export function initPairingWiring(): void {
         ? ` (${info.requiredVersion} or newer)`
         : '';
       showToast(
-        `A shared card needs a newer CardMirror version${need} — ` +
+        `A shared card needs a newer CardMirror Advanced version${need} — ` +
           `update to receive it.`,
       );
     });
@@ -164,7 +164,7 @@ export function initPairingWiring(): void {
         lastMismatchToast = now;
         const need = info.requiredVersion ? ` (${info.requiredVersion} or newer)` : '';
         showToast(
-          `A shared card needs a newer CardMirror version${need} — update to receive it.`,
+          `A shared card needs a newer CardMirror Advanced version${need} — update to receive it.`,
         );
       });
       m.onWebPairingAccountRequired(() => {

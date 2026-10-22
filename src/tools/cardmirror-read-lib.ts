@@ -5,7 +5,7 @@
  * representations for consumption by tools that can't open the app
  * (screen readers via AI assistants, agents indexing a Dropbox, …):
  *
- *   - `json`: the full-fidelity uncompressed CardMirror envelope. For
+ *   - `json`: the full-fidelity uncompressed CardMirror Advanced envelope. For
  *     `.cmir` this is literally the on-disk JSON with the gzip layer
  *     removed (works even on files the editor refuses as damaged —
  *     useful for forensics). For `.docx` the file is run through the

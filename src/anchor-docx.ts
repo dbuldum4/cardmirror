@@ -3,7 +3,7 @@
  *
  * A live zone re-locates its section on refresh by a stable heading id. A
  * `.cmir` carries that id natively; a `.docx` only does if it holds a
- * `pmd-heading-<uuid>` Word bookmark on the heading paragraph. CardMirror's
+ * `pmd-heading-<uuid>` Word bookmark on the heading paragraph. CardMirror Advanced's
  * exporter writes those bookmarks, but a raw Word / Verbatim file has none, so
  * refresh from one can never re-find the section (TRANSCLUSION §.docx-sources).
  *
@@ -146,7 +146,7 @@ export async function ensureHeadingAnchor(
     return { ok: false, reason: 'text-mismatch' };
   }
 
-  // Idempotent: a paragraph already anchored (e.g. a CardMirror-exported .docx)
+  // Idempotent: a paragraph already anchored (e.g. a CardMirror Advanced-exported .docx)
   // needs no write — reuse its id, return the original bytes.
   const existing = existingHeadingBookmark(kids);
   if (existing) return { ok: true, bytes: docxBytes, headingId: existing, added: false };

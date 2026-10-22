@@ -78,8 +78,8 @@ function stampLastSeen(appId: string, when: string): void {
 
 const UNIDENTIFIED_EXPLANATION =
   'An external app tried to insert content into your documents, but it did not ' +
-  'identify itself, so CardMirror turned it away. This usually means the app ' +
-  'predates CardMirror’s app permissions — update the app you were ' +
+  'identify itself, so CardMirror Advanced turned it away. This usually means the app ' +
+  'predates CardMirror Advanced’s app permissions — update the app you were ' +
   'sending from, then try again.';
 
 /** Mount the consent bridge. Returns an unsubscribe for tests. */

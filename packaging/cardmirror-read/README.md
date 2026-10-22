@@ -15,7 +15,7 @@ One file, no install, no dependencies beyond [Node.js](https://nodejs.org) 18+:
 
 ```sh
 curl -fsSL -o cardmirror-read.cjs \
-  https://raw.githubusercontent.com/ant981228/cardmirror/main/packaging/cardmirror-read/cardmirror-read.cjs
+  https://raw.githubusercontent.com/dbuldum4/cardmirror-advanced/main/packaging/cardmirror-read/cardmirror-read.cjs
 ```
 
 ## Use it

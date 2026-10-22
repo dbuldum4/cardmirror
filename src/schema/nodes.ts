@@ -378,7 +378,7 @@ export const nodes: { [name: string]: NodeSpec } = {
 
   /**
    * Transclusion "live zone" — a region mirroring the contents under a heading
-   * in another CardMirror file (see TRANSCLUSION_PLAN.md).
+   * in another CardMirror Advanced file (see TRANSCLUSION_PLAN.md).
    *
    * The transcluded cards are REAL child nodes (same block content as the doc),
    * so the zone is self-contained (a `.cmir` renders its zones anywhere it's

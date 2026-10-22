@@ -143,7 +143,7 @@ export function mountTimerUI(opts?: { popout?: boolean }): void {
     btn.className = 'pmd-timer-popout-btn';
     btn.type = 'button';
     const label = isPopout
-      ? 'Pop timer back into CardMirror'
+      ? 'Pop timer back into CardMirror Advanced'
       : 'Pop timer out into a floating window';
     btn.title = label;
     btn.setAttribute('aria-label', label);

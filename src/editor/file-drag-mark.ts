@@ -1,5 +1,5 @@
 /**
- * The CardMirror mark in the status bar's bottom-right corner: a drag
+ * The CardMirror Advanced mark in the status bar's bottom-right corner: a drag
  * handle for the focused document's file. Drag it into Slack, Mail,
  * Teams, Finder or Explorer and the OS receives the saved file — the
  * cross-platform counterpart of the macOS title-bar proxy icon (which
@@ -80,7 +80,7 @@ export function installFileDragMark(
     if (state.inert) el.dataset['inert'] = 'true';
     else delete el.dataset['inert'];
     el.title = state.title;
-    el.setAttribute('aria-label', state.title || 'CardMirror');
+    el.setAttribute('aria-label', state.title || 'CardMirror Advanced');
     el.setAttribute('aria-disabled', state.inert ? 'true' : 'false');
   };
 }

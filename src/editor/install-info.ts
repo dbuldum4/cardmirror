@@ -52,7 +52,7 @@ export function getInstallInfo(): InstallInfoEntry[] {
   const entries: InstallInfoEntry[] = [
     // Edition rides on the Version row: "which build is this?" is the
     // first triage question on any bug report from a Lite install.
-    { label: 'Version', value: isLiteBuild() ? `${appVersion} (CardMirror Lite)` : appVersion },
+    { label: 'Version', value: isLiteBuild() ? `${appVersion} (CardMirror Advanced Lite)` : appVersion },
     {
       label: 'Host',
       value: hostKind === 'electron' ? 'Desktop (Electron)' : 'Web browser',

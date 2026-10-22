@@ -5,13 +5,13 @@
  * modal and swallow number input meant for it.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { homeScreen, type HomeScreenCallbacks } from '../../src/editor/home-screen.js';
 import { pushOverlay, popOverlay } from '../../src/editor/overlay-stack.js';
 
-function makeCallbacks(): HomeScreenCallbacks & { newDoc: ReturnType<typeof vi.fn> } {
+function makeCallbacks(): HomeScreenCallbacks & { newDoc: Mock<NonNullable<HomeScreenCallbacks['newDoc']>> } {
   return {
-    newDoc: vi.fn(),
+    newDoc: vi.fn<NonNullable<HomeScreenCallbacks['newDoc']>>(),
     newSpeechDoc: vi.fn(),
     open: vi.fn(),
     openRecent: vi.fn(),
@@ -76,7 +76,7 @@ describe('home-screen shortcuts reflow around the gated Compress tile', () => {
   function mountWith(extra: Partial<HomeScreenCallbacks>) {
     document.body.innerHTML = '';
     const cb = {
-      newDoc: vi.fn(),
+      newDoc: vi.fn<NonNullable<HomeScreenCallbacks['newDoc']>>(),
       newSpeechDoc: vi.fn(),
       open: vi.fn(),
       openRecent: vi.fn(),
@@ -112,7 +112,7 @@ describe('Settings tile (2026-09-21)', () => {
   it('renders its own labeled group beside Learn and runs on key 9', () => {
     document.body.innerHTML = '';
     const openSettings = vi.fn();
-    const cb: HomeScreenCallbacks = { newDoc: vi.fn(), newSpeechDoc: vi.fn(), open: vi.fn(), openRecent: vi.fn(), manageQuickCards: vi.fn(), clean: vi.fn(), bulkConvert: vi.fn(), openSettings };
+    const cb: HomeScreenCallbacks = { newDoc: vi.fn<NonNullable<HomeScreenCallbacks['newDoc']>>(), newSpeechDoc: vi.fn(), open: vi.fn(), openRecent: vi.fn(), manageQuickCards: vi.fn(), clean: vi.fn(), bulkConvert: vi.fn(), openSettings };
     homeScreen.mount(document.body, cb);
     homeScreen.show();
     try {
@@ -133,7 +133,7 @@ describe('Settings tile (2026-09-21)', () => {
 
   it('is absent, and 9 does nothing, when no callback is supplied', () => {
     document.body.innerHTML = '';
-    const cb: HomeScreenCallbacks = { newDoc: vi.fn(), newSpeechDoc: vi.fn(), open: vi.fn(), openRecent: vi.fn(), manageQuickCards: vi.fn() };
+    const cb: HomeScreenCallbacks = { newDoc: vi.fn<NonNullable<HomeScreenCallbacks['newDoc']>>(), newSpeechDoc: vi.fn(), open: vi.fn(), openRecent: vi.fn(), manageQuickCards: vi.fn() };
     homeScreen.mount(document.body, cb);
     homeScreen.show();
     try {

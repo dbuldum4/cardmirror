@@ -81,12 +81,18 @@ export const HIGHLIGHT_BAND: Record<string, 'light' | 'dark' | 'none'> = {
   none: 'none',
 };
 
-/** Link hrefs CardMirror will carry: http(s), mailto, and relative /
+/** Link hrefs CardMirror Advanced will carry: http(s), mailto, and relative /
  *  fragment references (no scheme). Script-bearing schemes are refused. */
 export function isSafeLinkHref(href: string): boolean {
-  const m = /^\s*([a-z][a-z0-9+.-]*):/i.exec(href);
-  if (!m) return true; // relative or fragment
-  return /^(https?|mailto)$/i.test(m[1]!);
+  // URL parsers remove tabs/newlines inside schemes and leading controls.
+  // Reject controls before parsing so obfuscated script URLs cannot look relative.
+  if (/[\u0000-\u001f\u007f]/.test(href)) return false;
+  try {
+    const url = new URL(href, 'https://cardmirror.invalid/');
+    return ['http:', 'https:', 'mailto:'].includes(url.protocol);
+  } catch {
+    return false;
+  }
 }
 
 export const marks: { [name: string]: MarkSpec } = {
@@ -341,7 +347,7 @@ export const marks: { [name: string]: MarkSpec } = {
     ],
     toDOM: (mark) => [
       'a',
-      { href: String(mark.attrs['href'] ?? '') },
+      { href: isSafeLinkHref(String(mark.attrs['href'] ?? '')) ? String(mark.attrs['href']) : undefined, rel: 'noopener noreferrer' },
       0,
     ],
   },

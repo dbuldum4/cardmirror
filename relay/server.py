@@ -90,7 +90,6 @@ import re
 import threading
 import time
 import uuid
-import zlib
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import AsyncIterator, Optional
@@ -102,6 +101,11 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, Index, String, cre
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import TimeoutError as SATimeoutError
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
+if __package__:
+    from .body_limits import InvalidGzip, PayloadTooLarge, gunzip_bounded, read_bounded_body
+else:
+    from body_limits import InvalidGzip, PayloadTooLarge, gunzip_bounded, read_bounded_body
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("relay")
@@ -186,33 +190,7 @@ def get_db():
 
 MAX_BYTES = 25 * 1024 * 1024  # decompressed payload cap
 MAX_COMPRESSED_BYTES = 30 * 1024 * 1024  # gzip-bomb guard
-
-
-def gunzip_bounded(raw: bytes, max_bytes: int) -> bytes:
-    """Inflate `raw` but stop as soon as the output would exceed `max_bytes`.
-
-    gzip.decompress() inflates the whole body before any size check runs, so a
-    30 MiB upload could expand toward ~30 GiB (gzip's ~1032:1 ceiling) in
-    process memory first. Streaming through zlib with a running cap bounds the
-    memory a malicious body can take to max_bytes + one chunk.
-    (Security report 2026-10-08.)
-    """
-    d = zlib.decompressobj(16 + zlib.MAX_WBITS)  # gzip framing
-    out = bytearray()
-    view = memoryview(raw)
-    step = 256 * 1024
-    for i in range(0, len(view), step):
-        out += d.decompress(view[i:i + step], max_bytes + 1 - len(out))
-        if len(out) > max_bytes:
-            raise ValueError("decompressed payload too large")
-        # Input the decompressor held back because of the output cap means
-        # the body is bigger than allowed; don't keep feeding it.
-        if d.unconsumed_tail:
-            raise ValueError("decompressed payload too large")
-    out += d.flush()
-    if len(out) > max_bytes:
-        raise ValueError("decompressed payload too large")
-    return bytes(out)
+MAX_ROUTING_CODE_LENGTH = 256
 TTL = timedelta(hours=3)
 MAX_PER_POLL = 100
 HEARTBEAT_SECONDS = 25
@@ -220,6 +198,10 @@ STREAM_QUEUE_MAX = 100
 
 # Rooms (collaboration sessions)
 MAX_UPDATE_BYTES = 5 * 1024 * 1024        # one appended blob (chunked client-side above 256 KiB)
+MAX_SNAPSHOT_BLOB_BYTES = MAX_UPDATE_BYTES * 8
+# Preserve the existing snapshot blob cap, with bounded room for JSON metadata.
+MAX_SNAPSHOT_BYTES = MAX_SNAPSHOT_BLOB_BYTES + 64 * 1024
+MAX_PRESENCE_BYTES = 64 * 1024
 ROOM_CAP_BYTES = 200 * 1024 * 1024        # total stored per room (updates + snapshot)
 MAX_UPDATES_PER_PAGE = 200
 MAX_STREAMS_PER_ROOM = 10                 # participant ceiling, enforced at stream connect
@@ -456,10 +438,51 @@ def plugin_allowlist() -> dict:
     return {"schema": 1, "repos": repos}
 
 
-async def _raw_body(request: Request) -> bytes:
-    """Reads the request body on the event loop (a sync handler cannot
-    await); everything after this runs on a worker thread."""
-    return await request.body()
+async def _bounded_body(request: Request, limit: int, detail: str) -> bytes:
+    try:
+        return await read_bounded_body(request.stream(), limit)
+    except PayloadTooLarge:
+        raise HTTPException(413, detail)
+
+
+def _message_encoding(request: Request) -> str:
+    encodings = request.headers.getlist("content-encoding")
+    encoding = encodings[0].strip().lower() if encodings else "identity"
+    if len(encodings) > 1 or encoding not in ("identity", "gzip"):
+        raise HTTPException(415, "unsupported content encoding")
+    return encoding
+
+
+def _validate_recipient_code(recipient: str) -> str:
+    # Shipped clients use 22-character base64url hashes. Allow other short,
+    # printable ASCII identifiers for self-hosted clients without permitting
+    # oversized index entries or control characters in routing keys and logs.
+    if len(recipient) > MAX_ROUTING_CODE_LENGTH or not re.fullmatch(r"[!-~]+", recipient):
+        raise HTTPException(400, "invalid recipient code")
+    return recipient
+
+
+def _recipient_code(
+    recipient: str = Query(..., min_length=1, max_length=MAX_ROUTING_CODE_LENGTH),
+) -> str:
+    return _validate_recipient_code(recipient)
+
+
+async def _raw_body(
+    request: Request,
+    content_encoding: str = Depends(_message_encoding),
+) -> bytes:
+    """Receive at most the mailbox wire limit before handing off to a worker."""
+    limit = MAX_COMPRESSED_BYTES if content_encoding == "gzip" else MAX_BYTES
+    return await _bounded_body(request, limit, "payload too large")
+
+
+async def _room_update_body(request: Request) -> bytes:
+    return await _bounded_body(request, MAX_UPDATE_BYTES, "update too large")
+
+
+async def _room_snapshot_body(request: Request) -> bytes:
+    return await _bounded_body(request, MAX_SNAPSHOT_BYTES, "snapshot too large")
 
 
 # Deliberately a sync `def`: Starlette runs it in the threadpool, so the
@@ -471,18 +494,18 @@ async def _raw_body(request: Request) -> bytes:
 @app.post("/relay/messages", status_code=202, dependencies=[Depends(require_relay_token)])
 def post_message(
     raw: bytes = Depends(_raw_body),
-    content_encoding: Optional[str] = Header(None),
+    content_encoding: str = Depends(_message_encoding),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     if len(raw) > MAX_COMPRESSED_BYTES:
         raise HTTPException(413, "payload too large")
 
-    if "gzip" in (content_encoding or "").lower():
+    if content_encoding == "gzip":
         try:
             data = gunzip_bounded(raw, MAX_BYTES)
-        except ValueError:
+        except PayloadTooLarge:
             raise HTTPException(413, "payload too large")
-        except Exception:
+        except InvalidGzip:
             raise HTTPException(400, "invalid gzip body")
     else:
         data = raw
@@ -500,6 +523,7 @@ def post_message(
     recipient = payload.get("recipientCode")
     if not isinstance(recipient, str) or not recipient:
         raise HTTPException(400, "missing recipientCode")
+    _validate_recipient_code(recipient)
 
     msg_id = uuid.uuid4().hex
     row = RelayMessage(id=msg_id, recipient_code=recipient, body=payload)
@@ -536,7 +560,7 @@ def maybe_gzip_json(request: Request, payload: dict) -> Response:
 @app.get("/relay/messages", dependencies=[Depends(require_relay_token)])
 def get_messages(
     request: Request,
-    recipient: str = Query(..., min_length=1),
+    recipient: str = Depends(_recipient_code),
     db: Session = Depends(get_db),
 ) -> Response:
     # Lazy expiry via cutoff filter; the sweeper owns actual deletion.
@@ -561,7 +585,7 @@ def get_messages(
 @app.get("/relay/stream", dependencies=[Depends(require_relay_token)])
 async def stream_messages(
     request: Request,
-    recipient: str = Query(..., min_length=1),
+    recipient: str = Depends(_recipient_code),
 ) -> StreamingResponse:
     """SSE push channel: `event: hello` on connect, one `data:` frame per
     newly POSTed bundle, heartbeat comments while idle."""
@@ -659,14 +683,15 @@ def create_room(db: Session = Depends(get_db)) -> JSONResponse:
 )
 def post_room_update(
     room_id: str,
-    raw: bytes = Depends(_raw_body),
+    raw: bytes = Depends(_room_update_body),
     db: Session = Depends(get_db),
 ) -> JSONResponse:
     if not raw:
         raise HTTPException(400, "empty update")
     if len(raw) > MAX_UPDATE_BYTES:
         raise HTTPException(413, "update too large")
-    room = _room_or_error(db, room_id)
+    # Serialize capacity accounting with other appends and compactions.
+    room = _room_or_error(db, room_id, for_update=True)
     if room.bytes_used + len(raw) > ROOM_CAP_BYTES:
         raise HTTPException(413, "room storage cap reached")
     b64 = base64.b64encode(raw).decode("ascii")
@@ -730,7 +755,7 @@ def get_room_updates(
 )
 def post_room_snapshot(
     room_id: str,
-    raw: bytes = Depends(_raw_body),
+    raw: bytes = Depends(_room_snapshot_body),
     db: Session = Depends(get_db),
 ) -> Response:
     try:
@@ -741,7 +766,7 @@ def post_room_snapshot(
             raise ValueError
     except Exception:
         raise HTTPException(400, "expected {blob, coversThroughSeq}")
-    if len(blob) > MAX_UPDATE_BYTES * 8:
+    if len(blob) > MAX_SNAPSHOT_BLOB_BYTES:
         raise HTTPException(413, "snapshot too large")
     # Row lock: two overlapping compactions (a slow uplink can let the host
     # start the next before the last lands) otherwise race read-then-write,
@@ -797,11 +822,9 @@ async def post_room_presence(
     """Ephemeral fan-out only — never stored, never touches the DB (this
     is the hot path at cursor-move rates). An unknown room simply has no
     open streams, so the frame goes nowhere."""
-    raw = await request.body()
+    raw = await _bounded_body(request, MAX_PRESENCE_BYTES, "presence too large")
     if not raw:
         raise HTTPException(400, "empty presence")
-    if len(raw) > 64 * 1024:
-        raise HTTPException(413, "presence too large")
     b64 = base64.b64encode(raw).decode("ascii")
     _push_to_room(room_id, {"t": "p", "blob": b64}, skip_sid=sender)
     return JSONResponse({}, status_code=202)

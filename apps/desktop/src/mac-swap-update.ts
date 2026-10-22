@@ -3,7 +3,7 @@
  * (2026-07-16, modeled on ebb's flow after the update-UX comparison).
  *
  * Squirrel.Mac (electron-updater's installer) refuses unsigned apps, so
- * unsigned/self-signed CardMirror builds can't use `quitAndInstall` on
+ * unsigned/self-signed CardMirror Advanced builds can't use `quitAndInstall` on
  * macOS. Instead we do exactly what Tauri's updater does:
  *
  *   1. electron-updater STAGES the update (downloads the release .zip
@@ -16,7 +16,7 @@
  *      never re-assesses the swapped bundle), moves the old bundle
  *      aside, moves the new one in, and relaunches. Any failure
  *      restores the old bundle — the invariant is "you always have a
- *      launchable CardMirror".
+ *      launchable CardMirror Advanced".
  *
  * Combined with the stable self-signed release cert (see
  * scripts/setup-signing.sh), TCC grants (microphone) persist across
@@ -28,8 +28,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-/** `/Applications/CardMirror.app` from the running executable path
- *  (`…/CardMirror.app/Contents/MacOS/cardmirror`), or null when the
+/** `/Applications/CardMirror Advanced.app` from the running executable path
+ *  (`…/CardMirror Advanced.app/Contents/MacOS/cardmirror`), or null when the
  *  layout isn't a normal bundle. */
 export function bundlePathFromExe(exePath: string): string | null {
   const bundle = path.resolve(exePath, '..', '..', '..');
@@ -62,7 +62,7 @@ export interface SwapArgs {
   pid: number;
   /** The staged update zip (electron-updater's verified download). */
   zipPath: string;
-  /** The installed bundle to replace (e.g. /Applications/CardMirror.app). */
+  /** The installed bundle to replace (e.g. /Applications/CardMirror Advanced.app). */
   appBundlePath: string;
 }
 
@@ -70,7 +70,7 @@ export interface SwapArgs {
  *  safety-critical artifact, so its content is what gets asserted. */
 export function buildSwapScript(a: SwapArgs): string {
   return `#!/bin/bash
-# CardMirror self-update helper (generated; safe to delete).
+# CardMirror Advanced self-update helper (generated; safe to delete).
 set -u
 PID=${a.pid}
 ZIP=${shq(a.zipPath)}

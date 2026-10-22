@@ -19,7 +19,8 @@
  * throughput; both emit standard gzip and are fully interoperable.
  */
 
-import { gzipSync, gunzipSync, gzip as gzipWorker } from 'fflate';
+import { gunzipBounded, MAX_DOCUMENT_BYTES } from '../safe-containers.js';
+import { gzipSync, gzip as gzipWorker } from 'fflate';
 
 /** True when `bytes` is a gzip stream (magic 0x1F 0x8B). */
 export function isGzip(bytes: Uint8Array): boolean {
@@ -34,8 +35,8 @@ export function gzip(bytes: Uint8Array): Uint8Array {
 }
 
 /** Inflate a gzip stream produced by `gzip` (or any standard gzip). */
-export function gunzip(bytes: Uint8Array): Uint8Array {
-  return gunzipSync(bytes);
+export function gunzip(bytes: Uint8Array, maxBytes = MAX_DOCUMENT_BYTES): Uint8Array {
+  return gunzipBounded(bytes, maxBytes);
 }
 
 // One failed worker spawn means they'll all fail (no Worker global /
@@ -68,36 +69,41 @@ export function gzipAsync(
   bytes: Uint8Array,
   timeoutMs: number = GZIP_WORKER_TIMEOUT_MS,
 ): Promise<Uint8Array> {
-  if (gzipWorkerBroken) return Promise.resolve(gzip(bytes));
-  return new Promise((resolve) => {
+  if (gzipWorkerBroken) return Promise.resolve().then(() => gzip(bytes));
+  return new Promise((resolve, reject) => {
     let settled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let terminate: (() => void) | undefined;
     const finish = (out: Uint8Array): void => {
       if (settled) return;
       settled = true;
       if (timer !== null) clearTimeout(timer);
       resolve(out);
     };
-    timer = setTimeout(() => {
+    const fallback = (): void => {
       if (settled) return;
       gzipWorkerBroken = true;
-      console.warn(
-        '[cardmirror] gzip worker unresponsive — compressing on the main thread for the rest of this session',
-      );
-      finish(gzip(bytes));
+      terminate?.();
+      try { finish(gzip(bytes)); }
+      catch (err) {
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
+        reject(err);
+      }
+    };
+    timer = setTimeout(() => {
+      if (settled) return;
+      console.warn('[cardmirror] gzip worker unresponsive — compressing on the main thread for the rest of this session');
+      fallback();
     }, timeoutMs);
     try {
-      gzipWorker(bytes, { level: 6, mtime: 0 }, (err, out) => {
-        if (err || !out) {
-          gzipWorkerBroken = true;
-          finish(gzip(bytes));
-        } else {
-          finish(out);
-        }
+      terminate = gzipWorker(bytes, { level: 6, mtime: 0 }, (err, out) => {
+        if (settled) return;
+        if (err || !out) fallback();
+        else finish(out);
       });
     } catch {
-      gzipWorkerBroken = true;
-      finish(gzip(bytes));
+      fallback();
     }
   });
 }

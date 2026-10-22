@@ -10,7 +10,7 @@
  * remote page that keeps the preload. (Security report 2026-10-08.)
  *
  * Policy: the window itself may only navigate within the app's own origin
- * (the Vite dev server in development, `file:` in a packaged build). Every
+ * (the Vite dev server in development, exact file URLs in a packaged build). Every
  * other http(s)/mailto URL goes to the OS browser via `shell.openExternal`;
  * everything else (javascript:, data:, file: from a link, custom schemes) is
  * dropped. Pure decision function here so it's unit-testable; main.ts wires
@@ -33,8 +33,18 @@ export function decideNavigation(url: string, ownOrigins: readonly string[]): Na
   } catch {
     return { kind: 'deny' };
   }
-  if (parsed.protocol === 'file:' && ownOrigins.includes('file:')) return { kind: 'allow' };
-  if (ownOrigins.includes(parsed.origin)) return { kind: 'allow' };
+  if (parsed.protocol === 'file:') {
+    // file: URLs have the same opaque origin. Only the actual editor/timer
+    // entry files may keep the privileged preload; never trust all local HTML.
+    const sameEntry = ownOrigins.some((entry) => {
+      try {
+        const own = new URL(entry);
+        return own.protocol === 'file:' && own.host === parsed.host && own.pathname === parsed.pathname;
+      } catch { return false; }
+    });
+    return { kind: sameEntry ? 'allow' : 'deny' };
+  }
+  if (['http:', 'https:'].includes(parsed.protocol) && ownOrigins.includes(parsed.origin)) return { kind: 'allow' };
   if (EXTERNAL_OK.test(url)) return { kind: 'external', url };
   return { kind: 'deny' };
 }

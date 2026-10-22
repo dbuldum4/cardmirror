@@ -121,7 +121,7 @@ async function resolveOnce(
   try {
     // Parse by the source's own format. A `.docx` re-imports through the docx
     // importer (which reads pmd-heading-* bookmarks back as stable heading ids,
-    // so a CardMirror-exported .docx re-locates the section on refresh); a
+    // so a CardMirror Advanced-exported .docx re-locates the section on refresh); a
     // `.cmir` goes through the native reader.
     doc =
       fileFormat(file.name) === 'docx'

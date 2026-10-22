@@ -187,6 +187,7 @@ export const RIBBON_GROUPS: RibbonGroup[] = [
       'setNavDepth3',
       'setNavDepth4',
       'toggleMorphMode',
+      'checkDocument',
       'wordCountSelection',
       'openSettings',
       'cycleTheme',

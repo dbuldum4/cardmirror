@@ -12,7 +12,7 @@
  * screen preference, and its colors would be unreadable on white.
  *
  * Invariant (the whole point of doing it this way): a paste back into
- * CardMirror — this version or any earlier one — must produce exactly the
+ * CardMirror Advanced — this version or any earlier one — must produce exactly the
  * document it did before. The schema's parseDOM reads classes and `data-*`
  * attributes, plus a few inline properties it turns into marks or attrs:
  * `font-weight` (bold), `font-style` (italic), a `line-through`

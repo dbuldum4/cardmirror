@@ -21,33 +21,54 @@ export type XmlNode = { [tag: string]: XmlNode[] | string } & {
 
 const parser = new XMLParser({
   ignoreAttributes: false,
+  htmlEntities: true,
   attributeNamePrefix: '',
   textNodeName: '#text',
   preserveOrder: true,
   trimValues: false,
   parseAttributeValue: false,
   parseTagValue: false,
-  // fast-xml-parser ships a "billion laughs" guard that caps the
-  // total number of entity expansions per document at 1000. That
-  // guard counts every ordinary standard entity (&amp; &lt; &gt;
-  // &quot; &apos;) and numeric char-ref toward the budget, so a
-  // large, legitimate debate file — which easily contains thousands
-  // of ampersands / quotes across document.xml — trips it with
-  // "Entity expansion limit exceeded: N > 1000" and fails to load.
-  // Standard entities are 1:1, non-recursive replacements (no
-  // exponential blow-up); the actual entity-bomb vector is
-  // DOCTYPE-declared nested custom entities, which OOXML never uses.
-  // We open trusted local files, so lift the cap rather than reject
-  // real documents. (depth / entity-count / size guards still apply
-  // to any DOCTYPE entities, which OOXML doesn't have anyway.)
-  processEntities: {
-    enabled: true,
-    maxTotalExpansions: Infinity,
-    maxExpandedLength: Infinity,
-  },
+  // Ordinary XML entities remain unlimited for large debate documents.
+  // DTD declarations are rejected before parsing (see assertSafeXml).
+  processEntities: { enabled: true, maxTotalExpansions: Infinity, maxExpandedLength: Infinity },
 });
 
+/** OOXML never needs DTDs or custom entities. Refuse them before expansion. */
+export function assertSafeXml(xml: string): void {
+  if (xml.length > 128 * 1024 * 1024) throw new Error('XML part exceeds the 128 MiB safety limit.');
+  let depth = 0;
+  for (let i = 0; i < xml.length; i++) {
+    if (xml[i] !== '<') continue;
+    // Declaration-looking text inside a comment or CDATA is ordinary text.
+    const terminator = xml.startsWith('<!--', i) ? '-->' : xml.startsWith('<![CDATA[', i) ? ']]>' : xml.startsWith('<?', i) ? '?>' : null;
+    if (terminator) {
+      const end = xml.indexOf(terminator, i + 2);
+      if (end < 0) throw new Error('Unterminated XML comment, CDATA, or processing instruction.');
+      i = end + terminator.length - 1;
+      continue;
+    }
+    if (/^<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml.slice(i, i + 32))) {
+      throw new Error('Document XML contains a prohibited DTD or entity declaration.');
+    }
+    let quote = '';
+    let end = i + 1;
+    for (; end < xml.length; end++) {
+      const c = xml[end]!;
+      if (quote) { if (c === quote) quote = ''; }
+      else if (c === '"' || c === "'") quote = c;
+      else if (c === '>') break;
+    }
+    if (end >= xml.length) throw new Error('Unterminated XML tag.');
+    if (xml[i + 1] === '/') depth--;
+    else if (xml[end - 1] !== '/' && xml[i + 1] !== '!') {
+      if (++depth > 256) throw new Error('Document XML exceeds the 256-level nesting safety limit.');
+    }
+    i = end;
+  }
+}
+
 export function parseXml(xml: string): XmlNode[] {
+  assertSafeXml(xml);
   return parser.parse(xml) as XmlNode[];
 }
 
