@@ -173,6 +173,30 @@ describe('durable replacements (document and recovery-journal disk layer)', () =
     expect(directoryParentsToSync('C:\\new', 'c:\\new\\', path.win32)).toEqual(['C:\\']);
   });
 
+  it.each([
+    ['C:\\work\\new\\deeper', '\\\\?\\C:\\work\\new'],
+    ['\\\\server\\share\\new\\deeper', '\\\\?\\UNC\\server\\share\\new'],
+  ])('diagnoses unmatched Windows path forms without losing escaped values: %s', (destination, firstCreated) => {
+    let message = '';
+    try { directoryParentsToSync(destination, firstCreated, path.win32); }
+    catch (error) { message = (error as Error).message; }
+    expect(message).toMatch(/^Created directory is not an ancestor/);
+    const diagnostic = JSON.parse(message.slice(message.indexOf(': ') + 2));
+    expect(diagnostic).toEqual({
+      destination,
+      firstCreated,
+      resolvedFirstCreated: path.win32.resolve(firstCreated),
+      stoppedAt: path.win32.parse(destination).root,
+    });
+    // Node recognizes their identity after both forms use its native
+    // namespace conversion. CI diagnostics must establish whether this
+    // is the actual mkdir mismatch before changing production behavior.
+    expect(path.win32.relative(
+      path.win32.toNamespacedPath(path.win32.resolve(firstCreated)),
+      path.win32.toNamespacedPath(path.win32.dirname(destination)),
+    )).toBe('');
+  });
+
   it('does not silently ignore ordinary directory I/O errors', async () => {
     vi.spyOn(fs, 'open').mockRejectedValue(ioError('EIO'));
     await expect(syncDirectory(dir)).rejects.toThrow('injected EIO');

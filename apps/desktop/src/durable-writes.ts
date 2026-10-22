@@ -48,7 +48,12 @@ export function directoryParentsToSync(
     // Fail instead of repeatedly syncing the root if mkdir ever returns
     // a path outside this ancestry (including another Windows volume).
     if (pathApi.relative(current, parent) === '') {
-      throw new Error('Created directory is not an ancestor of the destination.');
+      throw new Error(`Created directory is not an ancestor of the destination: ${JSON.stringify({
+        destination: dir,
+        firstCreated,
+        resolvedFirstCreated: first,
+        stoppedAt: current,
+      })}`);
     }
     current = parent;
   }
