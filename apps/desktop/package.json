@@ -45,6 +45,14 @@
     ],
     "extraResources": [
       {
+        "from": "../../LICENSE",
+        "to": "LICENSE.cardmirror"
+      },
+      {
+        "from": "../../THIRD-PARTY-NOTICES.md",
+        "to": "THIRD-PARTY-NOTICES.md"
+      },
+      {
         "from": "../../dist",
         "to": "renderer",
         "filter": [

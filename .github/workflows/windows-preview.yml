@@ -53,10 +53,17 @@ jobs:
       - name: Build portable Windows executable
         working-directory: apps/desktop
         run: npx --no-install electron-builder --win portable --x64 --publish never '-c.win.artifactName=CardMirror-Advanced-Interim-${version}-${arch}.${ext}'
+      - name: Include original license and notices in the download
+        run: |
+          Copy-Item LICENSE apps/desktop/release/LICENSE
+          Copy-Item THIRD-PARTY-NOTICES.md apps/desktop/release/THIRD-PARTY-NOTICES.md
       - name: Upload portable preview
         uses: actions/upload-artifact@v4
         with:
           name: cardmirror-advanced-windows-preview
-          path: apps/desktop/release/CardMirror-Advanced-Interim-*.exe
+          path: |
+            apps/desktop/release/CardMirror-Advanced-Interim-*.exe
+            apps/desktop/release/LICENSE
+            apps/desktop/release/THIRD-PARTY-NOTICES.md
           if-no-files-found: error
           retention-days: 14
