@@ -332,9 +332,10 @@ interface ElectronAPI {
   cancelClose?(): Promise<void>;
   /** Optional so an older preload tolerates the mode-switch
    *  doc-list channel being absent. */
-  reportModeSwitchJournaled?(docs: Array<{ uid: string; dirty: boolean }>): Promise<void>;
+  reportModeSwitchJournaled?(docs: Array<{ uid: string; dirty: boolean }> | null, roundId: number): Promise<boolean>;
   takeModeSwitchJournaledDocs?(): Promise<Array<{ uid: string; dirty: boolean }>>;
-  onPleaseCloseForModeSwitch(handler: () => void): () => void;
+  onPleaseCloseForModeSwitch(handler: (roundId: number) => void): () => void;
+  onModeSwitchCancelled?(handler: (roundId: number) => void): () => void;
   onCloseRequest(handler: () => void): () => void;
   docRegister(uid: string): Promise<void>;
   docUnregister(uid: string): Promise<void>;
@@ -1074,8 +1075,7 @@ export class ElectronHost implements Host {
     await api().journalAndCloseOtherWindows();
   }
 
-  /** Programmatic "close this window." Called by the please-close
-   *  handler after the renderer finishes journaling. */
+  /** Programmatic close after an ordinary user close confirmation. */
   async closeSelf(): Promise<void> {
     await api().closeSelf();
   }
@@ -1089,8 +1089,8 @@ export class ElectronHost implements Host {
   /** Mode-switch helper: report the docs this window journaled in
    *  response to a please-close, so the surviving window can scope
    *  its post-reload auto-recovery to exactly the switch's docs. */
-  async reportModeSwitchJournaled(docs: Array<{ uid: string; dirty: boolean }>): Promise<void> {
-    await api().reportModeSwitchJournaled?.(docs);
+  async reportModeSwitchJournaled(docs: Array<{ uid: string; dirty: boolean }> | null, roundId: number): Promise<boolean> {
+    return (await api().reportModeSwitchJournaled?.(docs, roundId)) ?? false;
   }
 
   /** Mode-switch helper: fetch (and clear) the doc lists the closed
@@ -1101,8 +1101,12 @@ export class ElectronHost implements Host {
   }
 
   /** Subscribe to mode-switch please-close broadcasts. */
-  onPleaseCloseForModeSwitch(handler: () => void): () => void {
+  onPleaseCloseForModeSwitch(handler: (roundId: number) => void): () => void {
     return api().onPleaseCloseForModeSwitch(handler);
+  }
+
+  onModeSwitchCancelled(handler: (roundId: number) => void): () => void {
+    return api().onModeSwitchCancelled?.(handler) ?? (() => {});
   }
 
   /** Subscribe to user-initiated window close requests. Main fires

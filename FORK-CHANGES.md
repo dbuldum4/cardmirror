@@ -37,6 +37,16 @@ and notices too.
 | Plugin downloads | Bound actual response bytes and stalled bodies; honor empty allowlists as revocation | Byte-boundary, forged length, stalled stream and directory regressions |
 | Desktop clipboard | Adapt atomic rich-text/plain-text copying and reading to Electron 45's asynchronous API | Clipboard snapshot, text-only, write failure, and race tests |
 
+## Follow-up audit review
+
+The [28-finding comparison](AUDIT-REVIEW.md) records the current original and
+fork status for the supplied 1.15.0 audit. Remaining fixes prevent unpreserved
+windows closing during layout switches, flush document/journal data before
+reporting success, recheck browser save conflicts during retries and retain
+browser freshness baselines across recovery/window handoff. Quick Cards now
+commits cross-tab mutations and legacy migration atomically in IndexedDB.
+The existing UI layout is retained.
+
 ## Features and maintenance
 
 - **Check Document** in the existing command palette: read-only checks for empty

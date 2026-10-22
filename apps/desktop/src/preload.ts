@@ -471,8 +471,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   journalAndCloseOtherWindows: () =>
     ipcRenderer.invoke('host:journal-and-close-other-windows'),
 
-  /** Close this renderer's window programmatically. Called by the
-   *  please-close handler after journaling. */
+  /** Close this renderer's window after an ordinary close confirmation. */
   closeSelf: () => ipcRenderer.invoke('host:close-self'),
 
   /** Tell main that a close-request was resolved WITHOUT closing
@@ -486,8 +485,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
    *  surviving window can scope its post-reload auto-recovery to
    *  exactly the switch's docs (sessionStorage is per-window, so a
    *  closing window's list can only travel through main). */
-  reportModeSwitchJournaled: (docs: Array<{ uid: string; dirty: boolean }>) =>
-    ipcRenderer.invoke('host:mode-switch-journaled', docs),
+  reportModeSwitchJournaled: (docs: Array<{ uid: string; dirty: boolean }> | null, roundId: number) =>
+    ipcRenderer.invoke('host:mode-switch-journaled', docs, roundId),
 
   /** Fetch (and clear) the docs the closed windows reported for the
    *  current mode switch. Called once by the surviving window after
@@ -497,10 +496,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** Subscribe to mode-switch please-close broadcasts. Returns an
    *  unsubscribe handle. */
-  onPleaseCloseForModeSwitch(handler: () => void): () => void {
-    const listener = (): void => handler();
+  onPleaseCloseForModeSwitch(handler: (roundId: number) => void): () => void {
+    const listener = (_event: Electron.IpcRendererEvent, roundId: number): void => handler(roundId);
     ipcRenderer.on('mode-switch:please-close', listener);
     return () => ipcRenderer.removeListener('mode-switch:please-close', listener);
+  },
+
+  onModeSwitchCancelled(handler: (roundId: number) => void): () => void {
+    const listener = (_event: Electron.IpcRendererEvent, roundId: number): void => handler(roundId);
+    ipcRenderer.on('mode-switch:cancel', listener);
+    return () => ipcRenderer.removeListener('mode-switch:cancel', listener);
   },
 
   /** Subscribe to user-initiated close requests. Main intercepts

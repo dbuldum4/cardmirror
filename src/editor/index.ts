@@ -82,6 +82,7 @@ import {
   decodeModeSwitchMarker,
   encodeModeSwitchMarker,
   modeSwitchDirtyMap,
+  createModeSwitchJournalHandler,
   type ModeSwitchDoc,
 } from './mode-switch.js';
 import {
@@ -9539,7 +9540,9 @@ function pushNativeMenuBindings(): void {
 {
   const electronHost = getElectronHost();
   if (electronHost) {
+    let preservingForModeSwitch = false;
     electronHost.onMenuCommand((command) => {
+      if (preservingForModeSwitch) return;
       switch (command) {
         case 'newDocument':
           ribbonContext.newDocument();
@@ -9588,30 +9591,52 @@ function pushNativeMenuBindings(): void {
     });
     // Mode-switch coordination: another window is about to reload
     // into the new workspace mode and is asking us to journal our
-    // current doc and close. The journal write is best-effort; we
-    // close regardless so the originating window's
-    // `journalAndCloseOtherWindows` promise resolves promptly.
-    electronHost.onPleaseCloseForModeSwitch(() => {
-      void (async (): Promise<void> => {
-        try {
-          // Journals this window's open doc(s) — single doc or, in
-          // the rare multi-pane-with-extra-windows case, every pane —
-          // and reports the uid + dirty list to main so the surviving
-          // window can scope its post-reload reopen to exactly the
-          // switch's docs. Same co-editing contract as the toggling
-          // window: live sessions are flushed and their docs EXCLUDED
-          // from the report — they close and stay resumable from the
-          // Sessions list rather than reopening as static copies.
-          const docs = await journalForModeSwitchExcludingSessions();
-          if (docs.length > 0) {
-            await electronHost.reportModeSwitchJournaled(docs);
+    // current doc. Only main can authorize a close after accepting a
+    // successful report for the current round. Failure or a late reply
+    // leaves this window open and aborts the initiating layout switch.
+    const preserveForModeSwitch = createModeSwitchJournalHandler({
+      lock: () => {
+        preservingForModeSwitch = true;
+        const root = document.documentElement;
+        const wasInert = root.inert;
+        const editors = getSpeechDocResolver().allViews().map(({ view }) => ({
+          view, editable: view.props.editable,
+        }));
+        root.inert = true;
+        for (const { view } of editors) view.setProps({ editable: () => false });
+        return () => {
+          for (const { view, editable } of editors) {
+            if (!view.isDestroyed) view.setProps({ editable });
           }
-        } catch (err) {
-          console.warn('Mode-switch journaling failed:', err);
-        }
-        await electronHost.closeSelf();
-      })();
+          root.inert = wasInert;
+          preservingForModeSwitch = false;
+        };
+      },
+      captureUnchanged: () => {
+        const snapshots = getSpeechDocResolver().allViews().map(({ uid, view }) => ({
+          uid, view, doc: view.state.doc, threads: commentsKey.getState(view.state)?.threads,
+        }));
+        return () => {
+          const current = getSpeechDocResolver().allViews();
+          return current.length === snapshots.length && snapshots.every((snapshot) =>
+            current.some(({ uid, view }) => uid === snapshot.uid && view === snapshot.view &&
+              !view.isDestroyed && view.state.doc === snapshot.doc &&
+              commentsKey.getState(view.state)?.threads === snapshot.threads),
+          );
+        };
+      },
+      journal: async () => {
+        // Live sessions are flushed and excluded from static recovery:
+        // they remain resumable from the home-screen Sessions list.
+        return await journalForModeSwitchExcludingSessions();
+      },
+      report: (docs, roundId) => electronHost.reportModeSwitchJournaled(docs, roundId),
+      onError: (err) => console.warn('Mode-switch journaling failed:', err),
     });
+    electronHost.onPleaseCloseForModeSwitch((roundId) => {
+      void preserveForModeSwitch(roundId);
+    });
+    electronHost.onModeSwitchCancelled((roundId) => preserveForModeSwitch.cancel(roundId));
     // User clicked the OS close button. If the doc is clean,
     // close immediately. If dirty, prompt for save / save-as /
     // cancel / discard.

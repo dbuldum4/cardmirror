@@ -350,6 +350,8 @@ export interface Host {
  *  renderer to mount the doc without re-prompting via the file
  *  picker. */
 export interface SpawnWindowPayload {
+  /** Web file's original freshness baseline, preserved across the IDB handoff. */
+  browserFileBaseline?: { mtimeMs: number; size: number };
   /** Journal-carried baseline of a recovered doc being respawned. */
   diskBase?: DiskBase;
   filename: string;

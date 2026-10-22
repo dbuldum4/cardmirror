@@ -28,6 +28,58 @@ export interface ModeSwitchDoc {
   dirty: boolean;
 }
 
+/** Serialize preservation requests so a timed-out write cannot overwrite a
+ *  newer round's recovery copy. Main accepts reports only for its live round
+ *  and owns the resulting close; the renderer never closes on failure. */
+export function createModeSwitchJournalHandler(deps: {
+  journal(): Promise<ModeSwitchDoc[]>;
+  report(docs: ModeSwitchDoc[] | null, roundId: number): Promise<boolean>;
+  onError(error: unknown): void;
+  lock?(): () => void;
+  captureUnchanged?(): () => boolean;
+}): ((roundId: number) => Promise<void>) & { cancel(roundId: number): void } {
+  let pending = Promise.resolve();
+  let cancelledThrough = 0;
+  let active: { roundId: number; unlock?: () => void } | null = null;
+  const handle = (roundId: number): Promise<void> => {
+    pending = pending.then(async () => {
+      if (roundId <= cancelledThrough) return;
+      const request: NonNullable<typeof active> = { roundId };
+      active = request;
+      try {
+        request.unlock = deps.lock?.();
+        const unchanged = deps.captureUnchanged?.();
+        const docs = await deps.journal();
+        if (roundId <= cancelledThrough) return;
+        if (unchanged && !unchanged()) {
+          throw new Error('Documents changed while their recovery copies were being written. Try switching again.');
+        }
+        await deps.report(docs, roundId);
+      } catch (error) {
+        deps.onError(error);
+        try {
+          await deps.report(null, roundId);
+        } catch (reportError) {
+          deps.onError(reportError);
+        }
+      } finally {
+        request.unlock?.();
+        if (active === request) active = null;
+      }
+    });
+    return pending;
+  };
+  return Object.assign(handle, {
+    cancel(roundId: number): void {
+      cancelledThrough = Math.max(cancelledThrough, roundId);
+      if (active && active.roundId <= cancelledThrough) {
+        active.unlock?.();
+        active.unlock = undefined;
+      }
+    },
+  });
+}
+
 export function encodeModeSwitchMarker(docs: ModeSwitchDoc[]): string {
   return JSON.stringify({ docs });
 }

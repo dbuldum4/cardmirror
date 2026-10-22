@@ -377,24 +377,24 @@ describe('rename retry — transiently locked target (Dropbox/antivirus holds)',
     await recordDiskStateFromDisk(target);
     await claimBaseline(target, 1);
     const realRename = fs.rename;
-    const realWrite = fs.writeFile;
+    const realOpen = fs.open;
     (fs as { rename: typeof fs.rename }).rename = async () => {
       const err = new Error('EPERM: operation not permitted') as NodeJS.ErrnoException;
       err.code = 'EPERM';
       throw err;
     };
-    // Tmp writes pass through; the fallback's write to the TARGET fails
+    // Staging opens pass through; the fallback's open of the TARGET fails
     // (a genuinely exclusive hold that refuses even write-sharing).
-    (fs as { writeFile: typeof fs.writeFile }).writeFile = (async (
-      p: Parameters<typeof fs.writeFile>[0],
-      data: Parameters<typeof fs.writeFile>[1],
-      opts?: Parameters<typeof fs.writeFile>[2],
+    fs.open = (async (
+      p: Parameters<typeof fs.open>[0],
+      flags: Parameters<typeof fs.open>[1],
+      mode?: Parameters<typeof fs.open>[2],
     ) => {
-      if (String(p).includes('.cmtmp')) return realWrite(p, data, opts);
+      if (String(p) !== target) return realOpen(p, flags, mode);
       const err = new Error('EPERM: operation not permitted') as NodeJS.ErrnoException;
       err.code = 'EPERM';
       throw err;
-    }) as typeof fs.writeFile;
+    }) as typeof fs.open;
     let message = '';
     try {
       await saveExistingDoc(target, Buffer.from('v2'));
@@ -402,7 +402,7 @@ describe('rename retry — transiently locked target (Dropbox/antivirus holds)',
       message = (err as Error).message;
     } finally {
       (fs as { rename: typeof fs.rename }).rename = realRename;
-      (fs as { writeFile: typeof fs.writeFile }).writeFile = realWrite;
+      fs.open = realOpen;
     }
     expect(message).toContain(FILE_LOCKED_MARKER);
     expect(message).toContain('stuck.docx');

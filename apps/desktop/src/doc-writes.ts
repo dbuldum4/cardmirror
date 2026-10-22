@@ -34,8 +34,8 @@
  *
  *  3. ATOMIC WRITES + PER-PATH SERIALIZATION (all doc writes): bytes
  *     stage into a hidden sibling `.cmtmp` file, then rename over the
- *     real path — a crash mid-write can never leave a half-written
- *     document (same pattern as the crash-recovery journals). The
+ *     real path. The stage is synced before rename and the containing
+ *     directory afterward where supported. The
  *     atomicity is best-effort, not absolute: when the rename stays
  *     blocked by another process's hold on the target (a Dropbox
  *     upload on Windows can hold for many seconds), the write falls
@@ -54,9 +54,10 @@
  * only writes by OTHER programs trip the guard.
  */
 
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
+import { makeDurableDirectory, stageSyncedFile, syncDirectory, writeSyncedFile } from './durable-writes.js';
 
 /** Marker embedded in the changed-on-disk error MESSAGE — the renderer
  *  classifies IPC failures by message text (Electron only preserves the
@@ -268,9 +269,7 @@ async function writeAtomic(
   beforeRename?: () => Promise<void>,
 ): Promise<void> {
   const dir = path.dirname(filePath);
-  const tmpPath = path.join(dir, `.${path.basename(filePath)}.${randomUUID()}.cmtmp`);
-  // Exclusive creation prevents a pre-planted symlink from redirecting the save.
-  await fs.writeFile(tmpPath, buf, { flag: 'wx', mode: mode ?? 0o600 });
+  const tmpPath = await stageSyncedFile(filePath, buf, 'cmtmp', mode);
   // Second look before the rename: writing the tmp file takes real time
   // on a big document, and a synced-down remote version landing in that
   // gap would be replaced by the rename with the guard none the wiser.
@@ -323,12 +322,18 @@ async function writeAtomic(
         throw checkErr;
       }
     }
+    // The fallback can tear the target. Persist the complete recovery
+    // stage's directory entry before starting that in-place overwrite.
+    await syncDirectory(dir);
     try {
       // `mode` only applies if the overwrite has to CREATE the target
       // (possible on the saveNewDoc path); an existing file keeps its
       // own bits, which is the point of writing in place.
-      await fs.writeFile(filePath, buf, mode !== undefined ? { mode } : {});
+      await writeSyncedFile(filePath, buf, 'w', mode);
     } catch (fallbackErr) {
+      // A failed flush is an I/O failure, not an apparent successful save
+      // or a sharing violation. Retain the synced staging recovery copy.
+      if (!isTransientRenameCode(fallbackErr)) throw fallbackErr;
       const code =
         (fallbackErr as NodeJS.ErrnoException).code ??
         (err as NodeJS.ErrnoException).code;
@@ -343,6 +348,7 @@ async function writeAtomic(
     // still pin the tmp; a leftover is a complete recovery copy.
     await fs.unlink(tmpPath).catch(() => {});
   }
+  await syncDirectory(dir);
 }
 
 /** In-place save to a file that must already exist on disk, by the
@@ -454,7 +460,7 @@ export function saveNewDoc(
       );
       if (occupied) throw new DocExistsError(filePath);
     }
-    if (opts?.mkdir) await fs.mkdir(path.dirname(filePath), { recursive: true });
+    if (opts?.mkdir) await makeDurableDirectory(path.dirname(filePath));
     await writeAtomic(filePath, buf);
     // Candidate only: the window that adopts this file (Save As, a
     // conflicted copy) registers the path next and promotes it.

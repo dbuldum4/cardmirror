@@ -119,3 +119,53 @@ describe('BrowserHost.saveExisting ladder', () => {
     await expect(host.saveExisting(h, bytes)).rejects.toThrow(/write permission not granted/);
   });
 });
+
+describe('BrowserHost freshness across asynchronous save work', () => {
+  const bytes = new Uint8Array([1, 2, 3]);
+
+  async function openedHandle() {
+    const host = new BrowserHost();
+    const h = fakeHandle(0);
+    let modified = 1;
+    h.getFile = async () => {
+      h.calls.getFile++;
+      return new File(['original'], h.name, { lastModified: modified });
+    };
+    // A completed save establishes the same baseline as opening the file.
+    await host.saveExisting(h, bytes);
+    return { host, h, change: () => { modified++; } };
+  }
+
+  it('checks freshness after waiting for write permission', async () => {
+    const { host, h, change } = await openedHandle();
+    h.queryPermission = async () => { change(); return 'granted'; };
+    await expect(host.saveExisting(h, bytes)).rejects.toThrow(/EMODIFIED/);
+    expect(h.calls.createWritable).toBe(1);
+  });
+
+  it('preserves an external edit arriving during a retry', async () => {
+    const { host, h, change } = await openedHandle();
+    h.createWritable = async () => {
+      h.calls.createWritable++;
+      change(); // sync service changes the file while its swap is locked
+      throw invalidState();
+    };
+    await expect(host.saveExisting(h, bytes)).rejects.toThrow(/EMODIFIED/);
+    expect(h.calls.createWritable).toBe(2); // seed + failed attempt; no retry overwrite
+    expect(h.calls.write).toBe(1);
+  });
+
+  it('refuses to overwrite when the freshness read fails', async () => {
+    const { host, h } = await openedHandle();
+    h.getFile = async () => { throw new DOMException('unreadable', 'NotReadableError'); };
+    await expect(host.saveExisting(h, bytes)).rejects.toThrow(/unreadable/);
+    expect(h.calls.createWritable).toBe(1);
+  });
+
+  it('retains the explicit force-overwrite escape hatch', async () => {
+    const { host, h, change } = await openedHandle();
+    change();
+    await host.saveExisting(h, bytes, { force: true });
+    expect(h.calls.write).toBe(2);
+  });
+});

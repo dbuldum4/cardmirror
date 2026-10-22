@@ -442,14 +442,15 @@ export class BrowserHost implements Host {
     }
     const fh = handle as FileSystemFileHandle;
     const base = this.baselines.get(fh);
-    if (base && !opts?.force && typeof fh.getFile === 'function') {
-      const cur = await fh.getFile().catch(() => null);
-      if (cur && (cur.lastModified !== base.mtimeMs || cur.size !== base.size)) {
-        // Same marker the desktop guard uses: only the message crosses
-        // every boundary, and the save flows key their conflict UI off it.
+    const checkFreshness = async (): Promise<void> => {
+      if (!base || opts?.force) return;
+      // A failed stat must fail the save too; treating it as unchanged
+      // would turn a transient read error into permission to overwrite.
+      const cur = await fh.getFile();
+      if (cur.lastModified !== base.mtimeMs || cur.size !== base.size) {
         throw new Error(`EMODIFIED: "${fh.name ?? 'file'}" changed on disk since it was opened or last saved here.`);
       }
-    }
+    };
     // VERIFY only — never prompt here. Write permission is granted ahead of time
     // by `ensureWritable` from a user gesture (Save click / autosave toggle), so
     // a gesture-less autosave fire that lacks permission fails cleanly (the
@@ -461,6 +462,7 @@ export class BrowserHost implements Host {
       throw new Error('BrowserHost: write permission not granted for in-place save.');
     }
     const blob = bytesToBlob(bytes, fh.name ?? '');
+    await checkFreshness();
     try {
       await writeThrough(fh, blob);
       await this.recordBaseline(fh);
@@ -471,8 +473,9 @@ export class BrowserHost implements Host {
       // DriveFS on ChromeOS) touch files between our snapshot and the swap
       // commit. Refresh the handle's cached state (getFile re-reads size and
       // mtime), give the sync a beat to settle, and retry ONCE.
-      await fh.getFile?.().catch(() => undefined);
+      await fh.getFile();
       await new Promise((r) => setTimeout(r, 300));
+      await checkFreshness();
       try {
         await writeThrough(fh, blob);
         await this.recordBaseline(fh);
@@ -547,9 +550,11 @@ export class BrowserHost implements Host {
       // fine: the duplicate-open guard's isSameEntry needs no grant, and
       // in-place save re-requests permission on first write). Keeping it lets a
       // journaled/recovered doc retain its file identity across a mode switch.
-      tx.objectStore(STORE_JOURNALS).put({ ...entry });
+      const base = entry.handle && typeof entry.handle === 'object'
+        ? this.baselines.get(entry.handle) : undefined;
+      tx.objectStore(STORE_JOURNALS).put({ ...entry, ...(base ? { diskBase: base } : {}) });
       tx.oncomplete = (): void => resolve();
-      tx.onerror = (): void => reject(tx.error ?? new Error('writeJournal failed.'));
+      tx.onerror = tx.onabort = (): void => reject(tx.error ?? new Error('writeJournal failed.'));
     });
   }
 
@@ -559,7 +564,15 @@ export class BrowserHost implements Host {
     return new Promise<JournalEntry[]>((resolve, reject) => {
       const tx = db.transaction(STORE_JOURNALS, 'readonly');
       const req = tx.objectStore(STORE_JOURNALS).getAll();
-      req.onsuccess = (): void => resolve((req.result as JournalEntry[]) ?? []);
+      req.onsuccess = (): void => {
+        const entries = (req.result as JournalEntry[]) ?? [];
+        for (const entry of entries) {
+          if (entry.handle && typeof entry.handle === 'object' && entry.diskBase) {
+            this.baselines.set(entry.handle, entry.diskBase);
+          }
+        }
+        resolve(entries);
+      };
       req.onerror = (): void => reject(req.error ?? new Error('readJournals failed.'));
     });
   }
@@ -571,7 +584,7 @@ export class BrowserHost implements Host {
       const tx = db.transaction(STORE_JOURNALS, 'readwrite');
       tx.objectStore(STORE_JOURNALS).delete(uid);
       tx.oncomplete = (): void => resolve();
-      tx.onerror = (): void => reject(tx.error ?? new Error('deleteJournal failed.'));
+      tx.onerror = tx.onabort = (): void => reject(tx.error ?? new Error('deleteJournal failed.'));
     });
   }
 
@@ -646,7 +659,11 @@ export class BrowserHost implements Host {
         const db = await openDb();
         await new Promise<void>((resolve, reject) => {
           const tx = db.transaction(STORE_SPAWNS, 'readwrite');
-          tx.objectStore(STORE_SPAWNS).put(payload, id);
+          // Keep the original open/save baseline, rather than adopting a
+          // possibly newer on-disk version after the new window boots.
+          const base = payload.handle && typeof payload.handle === 'object'
+            ? this.baselines.get(payload.handle) ?? payload.browserFileBaseline ?? payload.diskBase : undefined;
+          tx.objectStore(STORE_SPAWNS).put({ ...payload, browserFileBaseline: base }, id);
           tx.oncomplete = (): void => resolve();
           tx.onerror = (): void => reject(tx.error ?? new Error('spawn write failed'));
           tx.onabort = (): void => reject(tx.error ?? new Error('spawn write aborted'));
@@ -678,6 +695,9 @@ export class BrowserHost implements Host {
         req.onsuccess = (): void => {
           const payload = (req.result as SpawnWindowPayload | undefined) ?? null;
           store.delete(SPAWN_ID); // one-shot
+          if (payload?.handle && typeof payload.handle === 'object' && payload.browserFileBaseline) {
+            this.baselines.set(payload.handle, payload.browserFileBaseline);
+          }
           resolve(payload);
         };
         req.onerror = (): void => resolve(null);

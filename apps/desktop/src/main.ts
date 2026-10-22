@@ -16,6 +16,7 @@
  */
 
 import { createClipboardBridge } from './clipboard-bridge.js';
+import { ModeSwitchCloseCoordinator } from './mode-switch-close.js';
 import { pathToFileURL } from 'node:url';
 import { arrangementRects, type ArrangeOptions } from './arrange-windows.js';
 import {
@@ -1556,6 +1557,7 @@ ipcMain.handle('host:cloud-provider', async (_event, p: unknown): Promise<CloudP
 });
 
 // ─── Crash-recovery journals ───────────────────────────────────────
+import { makeDurableDirectory, replaceDurably } from './durable-writes.js';
 // Each open doc gets one journal file at
 //   {userData}/journals/{uid}.cmir-journal
 // containing a small JSON envelope plus the doc bytes as base64.
@@ -1593,7 +1595,7 @@ function journalPathFor(uid: string): string {
 }
 
 async function ensureJournalsDir(): Promise<void> {
-  await fs.mkdir(journalsDir(), { recursive: true });
+  await makeDurableDirectory(journalsDir());
 }
 
 // Per-uid serialization tail. The renderer can dispatch two
@@ -1636,26 +1638,22 @@ ipcMain.handle('host:write-journal', (event, entry: JournalEntryIpc) => {
       ...(diskBase ? { diskBase } : {}),
       bytesB64: buf.toString('base64'),
     };
-    // Atomic write: stage into a sibling .tmp file then rename
-    // over the real path. fs.rename is atomic on POSIX, so a
-    // crash mid-write can't leave a half-written real journal,
-    // and a concurrent reader either sees the previous valid
-    // file or the new one — never a torn mix.
+    // Sync an exclusive sibling stage before publishing it, then sync
+    // the directory entry where supported. Failed flushes reject the IPC.
     const finalPath = journalPathFor(entry.uid);
-    const tmpPath = `${finalPath}.tmp`;
-    await fs.writeFile(tmpPath, JSON.stringify(envelope));
-    await fs.rename(tmpPath, finalPath);
+    await replaceDurably(finalPath, Buffer.from(JSON.stringify(envelope)));
   });
   journalWriteTails.set(entry.uid, next);
   // GC the chain entry when this write settles, so the map
   // doesn't grow forever across long sessions. Only clear if
   // we're still the tail — a later write may have already
   // chained onto us.
-  void next.finally(() => {
+  const cleanupTail = (): void => {
     if (journalWriteTails.get(entry.uid) === next) {
       journalWriteTails.delete(entry.uid);
     }
-  });
+  };
+  void next.then(cleanupTail, cleanupTail);
   return next;
 });
 
@@ -2071,59 +2069,36 @@ ipcMain.on('host:is-app-quitting', (event) => {
 // before A reloads — so the post-reload recovery flow can pick up
 // every doc and restore them in the new layout. Each renderer
 // listens for `'mode-switch:please-close'`; on receipt it journals
-// the current doc and calls `host:close-self`. We wait for the
-// `closed` event on each before resolving, with a generous timeout
-// fallback so a hung renderer doesn't strand the originating window.
+// the current doc and reports a round-specific acknowledgment. Main
+// closes only acknowledged windows. A timeout rejects the switch while
+// leaving unpreserved windows open; the initiator reverts its setting.
 
 const MODE_SWITCH_CLOSE_TIMEOUT_MS = 10000;
 
-// True while a mode switch is closing the other windows. Backstop
-// against two concurrent rounds: if two windows each initiated, each
-// would treat the OTHER's surviving host as a window to close, so they
-// would close each other and leave nothing open. The renderer gates
-// the switch to the initiating window only (remote settings changes
-// don't trigger it); this guard catches anything that slips past.
-let modeSwitchInProgress = false;
-
-// Docs journaled by the windows that close for a mode switch. Each
-// closing renderer reports its {uid, dirty} list before close-self;
-// the surviving window collects (and clears) the accumulated set
-// after its reload so it can auto-reopen exactly the switch's docs
-// — sessionStorage can't carry the closed windows' lists across.
-let modeSwitchJournaledDocs: Array<{ uid: string; dirty: boolean }> = [];
+const modeSwitchClose = new ModeSwitchCloseCoordinator(MODE_SWITCH_CLOSE_TIMEOUT_MS);
 
 ipcMain.handle('host:journal-and-close-other-windows', async (event) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
-  if (modeSwitchInProgress) return;
-  modeSwitchInProgress = true;
-  // Fresh round — drop reports left over from an earlier switch
-  // whose surviving window never collected them.
-  modeSwitchJournaledDocs = [];
-  try {
+  if (!sender || sender.isDestroyed()) throw new Error('The initiating window is no longer available');
   const others = BrowserWindow.getAllWindows().filter(
-    (w) => w !== sender && !w.isDestroyed(),
+    (w) => w !== sender && !w.isDestroyed() && !isTimerWindow(w),
   );
-  await Promise.all(
-    others.map(
-      (w) =>
-        new Promise<void>((resolve) => {
-          const timer = setTimeout(() => {
-            // The renderer never closed itself in time: destroy()
-            // skips its journal, so its doc is lost on reopen.
-            if (!w.isDestroyed()) w.destroy();
-            resolve();
-          }, MODE_SWITCH_CLOSE_TIMEOUT_MS);
-          w.once('closed', () => {
-            clearTimeout(timer);
-            resolve();
-          });
-          w.webContents.send('mode-switch:please-close');
-        }),
-    ),
-  );
-  } finally {
-    modeSwitchInProgress = false;
-  }
+  await modeSwitchClose.closeOthers(others.map((win) => ({
+    id: win.id,
+    requestJournal: (roundId) => win.webContents.send('mode-switch:please-close', roundId),
+    cancelJournal: (roundId) => {
+      if (!win.isDestroyed()) win.webContents.send('mode-switch:cancel', roundId);
+    },
+    close: () => {
+      if (win.isDestroyed()) throw new Error('A window closed before the switch completed');
+      skipCloseConfirm.add(win.id);
+      win.close();
+    },
+    onClosed: (handler) => {
+      win.once('closed', handler);
+      return () => win.removeListener('closed', handler);
+    },
+  })));
 });
 
 ipcMain.handle('host:close-self', async (event) => {
@@ -2149,15 +2124,14 @@ ipcMain.handle('host:close-cancelled', () => {
 
 ipcMain.handle(
   'host:mode-switch-journaled',
-  (_event, docs: Array<{ uid: string; dirty: boolean }>) => {
-    if (Array.isArray(docs)) modeSwitchJournaledDocs.push(...docs);
+  (event, docs: unknown, roundId: number) => {
+    const sender = BrowserWindow.fromWebContents(event.sender);
+    return sender ? modeSwitchClose.report(sender.id, roundId, docs) : false;
   },
 );
 
 ipcMain.handle('host:take-mode-switch-journaled', () => {
-  const docs = modeSwitchJournaledDocs;
-  modeSwitchJournaledDocs = [];
-  return docs;
+  return modeSwitchClose.takeJournaledDocs();
 });
 
 // ─── Speech-doc registry ──────────────────────────────────────────

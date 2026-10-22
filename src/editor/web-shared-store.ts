@@ -7,10 +7,9 @@
  * the channel and other tabs re-`load()`.
  *
  * WEB ONLY — the Electron editions keep their main-process backends. All ops are
- * best-effort: where IndexedDB is unavailable (private mode, disabled storage,
- * jsdom in tests) `load()` returns null and `save()` no-ops, so the store still
- * works in-memory for the current tab, just without persistence or cross-tab
- * sync. `save()` surfaces a toast when the browser refuses a write for quota.
+ * Where IndexedDB is unavailable, values remain in memory for the current tab,
+ * without persistence or cross-tab sync. save() is best-effort; mutate()
+ * rejects refused transactions so callers can distinguish failed writes.
  */
 
 import { showToast } from './toast.js';
@@ -54,6 +53,8 @@ function isQuotaError(err: unknown): boolean {
 
 export class WebSharedStore<T> {
   private readonly channel: BroadcastChannel | null;
+  private memoryValue: T | null = null;
+  private readonly memoryMarkers = new Set<string>();
 
   /**
    * @param key         IndexedDB key the value lives under.
@@ -74,7 +75,7 @@ export class WebSharedStore<T> {
   /** Load the stored value, or null if absent / storage unavailable. */
   async load(): Promise<T | null> {
     const db = await openDb();
-    if (!db) return null;
+    if (!db) return this.memoryValue;
     return new Promise((resolve) => {
       let req: IDBRequest;
       try {
@@ -88,10 +89,62 @@ export class WebSharedStore<T> {
     });
   }
 
+  /** Read, synchronously transform, and commit as one serialized transaction.
+   * The optional migration seed and marker commit with the value, so a failed
+   * first write remains retryable and a later clear cannot resurrect the seed.
+   * Unlike best-effort save(), a refused transaction rejects its caller. */
+  async mutate(
+    apply: (current: T | null) => T,
+    migration?: { markerKey: string; initialValue: () => T },
+  ): Promise<T> {
+    const db = await openDb();
+    if (!db) {
+      const initial = this.memoryValue === null && migration && !this.memoryMarkers.has(migration.markerKey)
+        ? migration.initialValue() : this.memoryValue;
+      const value = apply(initial);
+      this.memoryValue = value;
+      if (migration) this.memoryMarkers.add(migration.markerKey);
+      return value;
+    }
+    try {
+      const value = await new Promise<T>((resolve, reject) => {
+        const tx = db.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        let value: T;
+        let failure: unknown;
+        tx.oncomplete = (): void => resolve(value);
+        tx.onerror = tx.onabort = (): void => reject(failure ?? tx.error ?? new Error('write aborted'));
+        const current = store.get(this.key);
+        const marker = migration ? store.get(migration.markerKey) : null;
+        // Both requests run in this transaction; the last request's callback
+        // may enqueue writes without yielding and making the transaction idle.
+        const write = (): void => {
+          try {
+            const initial = current.result === undefined && migration && !marker?.result
+              ? migration.initialValue() : (current.result as T | undefined) ?? null;
+            value = apply(initial);
+            store.put(value, this.key);
+            if (migration) store.put(true, migration.markerKey);
+          } catch (err) {
+            failure = err;
+            tx.abort();
+          }
+        };
+        if (marker) marker.onsuccess = write;
+        else current.onsuccess = write;
+      });
+      this.channel?.postMessage('changed');
+      return value;
+    } catch (err) {
+      this.reportFailure(err);
+      throw err;
+    }
+  }
+
   /** Persist `value` and ping other tabs. Best-effort; toasts on quota refusal. */
   async save(value: T): Promise<void> {
     const db = await openDb();
-    if (!db) return;
+    if (!db) { this.memoryValue = value; return; }
     try {
       await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE, 'readwrite');
@@ -103,10 +156,14 @@ export class WebSharedStore<T> {
       // BroadcastChannel doesn't echo to the sender, so only OTHER tabs reload.
       this.channel?.postMessage('changed');
     } catch (err) {
-      console.warn(`[cardmirror] ${this.label}: web persist failed`, err);
-      if (isQuotaError(err)) {
-        showToast(`Couldn't save the ${this.label} — browser storage is full.`);
-      }
+      this.reportFailure(err);
+    }
+  }
+
+  private reportFailure(err: unknown): void {
+    console.warn(`[cardmirror] ${this.label}: web persist failed`, err);
+    if (isQuotaError(err)) {
+      showToast(`Couldn't save the ${this.label} — browser storage is full.`);
     }
   }
 

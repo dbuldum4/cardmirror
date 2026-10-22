@@ -144,13 +144,21 @@ class QuickCardsStore {
   private listeners: Set<Listener> = new Set();
   private hostUnsubscribe: (() => void) | null = null;
   private initialized = false;
+  private initializing: Promise<void> | null = null;
 
   /** Eagerly load from whichever backend is active. Idempotent.
    *  Call once during renderer boot — every surface (add / search /
    *  manage / home) reads through this single cache. */
-  async init(): Promise<void> {
-    if (this.initialized) return;
-    this.initialized = true;
+  init(): Promise<void> {
+    if (this.initializing) return this.initializing;
+    if (this.initialized) return Promise.resolve();
+    this.initializing = this.initialize().then(() => {
+      this.initialized = true;
+    }).finally(() => { this.initializing = null; });
+    return this.initializing;
+  }
+
+  private async initialize(): Promise<void> {
     const electron = getElectronHost();
     if (electron) {
       try {
@@ -185,9 +193,9 @@ class QuickCardsStore {
   /** Add-or-replace by id. Used by both Add (new card) and the manage
    *  surface's edit (existing card). */
   async upsert(card: QuickCard): Promise<void> {
-    this.cards = [...this.cards.filter((c) => c.id !== card.id), card];
     const electron = getElectronHost();
     if (electron) {
+      this.cards = [...this.cards.filter((c) => c.id !== card.id), card];
       await electron.quickCardsUpsert(card);
     } else {
       await this.webMutate((cur) => [...cur.filter((c) => c.id !== card.id), card]);
@@ -195,29 +203,18 @@ class QuickCardsStore {
     this.fire();
   }
 
-  /** Web write: read-apply-write under a Web Lock, so two tabs mutating
-   *  back to back can't clobber each other's whole-library writes (the
-   *  BroadcastChannel resync alone left a millisecond race, audit 15).
-   *  The in-memory list adopts the merged result. */
+  /** IndexedDB serializes the whole read/apply/write even without Web Locks.
+   * Adopt the merged result only after its transaction commits. */
   private async webMutate(apply: (current: QuickCard[]) => QuickCard[]): Promise<void> {
-    const run = async (): Promise<void> => {
-      const current = sanitizeCards(await webLibrary.load());
-      this.cards = apply(current);
-      await webLibrary.save(this.cards);
-    };
-    if (typeof navigator !== 'undefined' && typeof navigator.locks?.request === 'function') {
-      await navigator.locks.request('pmd-quick-cards', run);
-    } else {
-      await run();
-    }
+    this.cards = await webLibrary.mutate((current) => apply(sanitizeCards(current)), legacyMigration());
   }
 
   /** Bulk add-or-replace (import). One write / one broadcast. */
   async importMany(cards: QuickCard[]): Promise<void> {
     const incoming = new Map(cards.map((c) => [c.id, c]));
-    this.cards = [...this.cards.filter((c) => !incoming.has(c.id)), ...cards];
     const electron = getElectronHost();
     if (electron) {
+      this.cards = [...this.cards.filter((c) => !incoming.has(c.id)), ...cards];
       await electron.quickCardsBulkUpsert(cards);
     } else {
       await this.webMutate((cur) => [...cur.filter((c) => !incoming.has(c.id)), ...cards]);
@@ -226,9 +223,9 @@ class QuickCardsStore {
   }
 
   async remove(id: string): Promise<void> {
-    this.cards = this.cards.filter((c) => c.id !== id);
     const electron = getElectronHost();
     if (electron) {
+      this.cards = this.cards.filter((c) => c.id !== id);
       await electron.quickCardsRemove(id);
     } else {
       await this.webMutate((cur) => cur.filter((c) => c.id !== id));
@@ -237,9 +234,9 @@ class QuickCardsStore {
   }
 
   async clear(): Promise<void> {
-    this.cards = [];
     const electron = getElectronHost();
     if (electron) {
+      this.cards = [];
       await electron.quickCardsClear();
     } else {
       await this.webMutate(() => []);
@@ -271,27 +268,32 @@ function sanitizeCards(raw: QuickCard[] | null): QuickCard[] {
 /** Web load: IndexedDB, migrating once from the old localStorage backend while
  *  IndexedDB is still empty, so existing libraries carry over on the upgrade. */
 async function loadWebCards(): Promise<QuickCard[]> {
-  const stored = sanitizeCards(await webLibrary.load());
-  if (stored.length > 0) return stored;
-  // Migrate from localStorage ONCE. Without the marker an emptied library
-  // (every card deleted) looked like "never migrated" and the old cards
-  // came back on the next load (audit item 28).
-  if (legacyMigrated()) return [];
-  const legacy = readLegacyLocalCards();
-  if (legacy.length > 0) {
-    void webLibrary.save(legacy); // persist into IndexedDB from here on
-    // localStorage is left intact as a safe fallback.
+  // Existing data, including an intentionally emptied library, needs no write
+  // to be usable. In particular, quota/I/O refusal must not hide a readable
+  // library just because a new tab opens.
+  const stored = await webLibrary.load();
+  if (stored !== null) return sanitizeCards(stored);
+  try {
+    return await webLibrary.mutate(sanitizeCards, legacyMigration());
+  } catch (err) {
+    // Another tab may have committed between the initial read and our failed
+    // migration. Adopt only committed data; absent data still rejects so the
+    // caller can retry instead of reporting an empty migration as successful.
+    const committed = await webLibrary.load();
+    if (committed !== null) return sanitizeCards(committed);
+    throw err;
   }
-  markLegacyMigrated();
-  return legacy;
 }
 
 const MIGRATED_KEY = `${STORAGE_KEY}:migrated-to-idb`;
 function legacyMigrated(): boolean {
   try { return localStorage.getItem(MIGRATED_KEY) === '1'; } catch { return false; }
 }
-function markLegacyMigrated(): void {
-  try { localStorage.setItem(MIGRATED_KEY, '1'); } catch { /* storage unavailable: re-check next load */ }
+function legacyMigration(): { markerKey: string; initialValue: () => QuickCard[] } {
+  // Honor the previous localStorage marker on upgrade, but record all new
+  // migrations inside IndexedDB's value transaction. Keep legacy data intact
+  // so a failed commit can retry; an existing value (including []) wins.
+  return { markerKey: MIGRATED_KEY, initialValue: () => legacyMigrated() ? [] : readLegacyLocalCards() };
 }
 
 /** Legacy localStorage backend — read only for migration, never written. */

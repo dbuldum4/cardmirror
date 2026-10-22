@@ -227,6 +227,25 @@ describe('Anthropic: refusal stop_reason', () => {
 });
 
 describe('request timeout', () => {
+  it('keeps the timeout active after headers while the response body stalls', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: { signal: AbortSignal }) => {
+      const body = new ReadableStream({
+        start(controller) {
+          init.signal.addEventListener('abort', () => controller.error(
+            Object.assign(new Error('aborted'), { name: 'AbortError' }),
+          ));
+        },
+      });
+      return new Response(body, { status: 200 });
+    }));
+    const outcome = expect(callLlm(REQ)).rejects.toMatchObject({
+      kind: 'network', message: expect.stringMatching(/timed out after 5 minutes/),
+    });
+    await vi.advanceTimersByTimeAsync(300_000);
+    await outcome;
+  });
+
   it('a hung connection aborts with a network-kind timeout error', async () => {
     vi.useFakeTimers();
     vi.stubGlobal(
