@@ -1,0 +1,1 @@
+var e=null;typeof document<`u`&&document.addEventListener(`mousedown`,t=>e=t.target,!0);function t(t,n){return t.target===n?t.detail===0||e===n:!1}export{t};
