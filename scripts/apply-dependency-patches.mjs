@@ -5,10 +5,16 @@ import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const patch = 'patches/loro-prosemirror+0.4.3.patch';
+// Windows checkouts may convert tracked patches to CRLF; npm tarballs keep LF.
+// Feed Git normalized patch bytes so matching stays exact on every platform.
+const patchInput = readFileSync(new URL(`../${patch}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const pkg = JSON.parse(readFileSync(new URL('../node_modules/loro-prosemirror/package.json', import.meta.url), 'utf8'));
 if (pkg.version !== '0.4.3') throw new Error('Review the collaboration patch before upgrading loro-prosemirror.');
 const apply = (...args) => {
-  const result = spawnSync('git', ['apply', ...args, patch], { cwd: root, encoding: 'utf8' });
+  // Keep npm's LF files unchanged by Git's Windows checkout conversion too.
+  const result = spawnSync('git', ['-c', 'core.autocrlf=false', 'apply', ...args, '-'], {
+    cwd: root, encoding: 'utf8', input: patchInput,
+  });
   if (result.error) throw result.error;
   return result;
 };

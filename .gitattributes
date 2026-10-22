@@ -1,0 +1,2 @@
+# Dependency tarballs use LF; keep the reviewed patches in the same format.
+*.patch text eol=lf

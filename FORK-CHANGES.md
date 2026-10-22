@@ -46,6 +46,10 @@ and notices too.
   Structured local reports and useful exit codes, without modifying the input.
 - Updated XML parser, Vite, Vitest, Electron and dependency lockfiles; removed
   patch-package in favor of a small reproducible collaboration patch script.
+- The patch installer normalizes Windows CRLF checkouts before exact matching
+  against npm's LF files. Regression tests cover both line endings, Git's
+  Windows checkout setting, repeat installation, and rejection of changed
+  dependency contents/versions; CI runs them on Linux, macOS, and Windows.
 - Fixed numeric XML reference decoding and retained original/fork window-title
   compatibility for collaboration and window switching.
 - Fork-specific package names, application identity, executable, profile, update
