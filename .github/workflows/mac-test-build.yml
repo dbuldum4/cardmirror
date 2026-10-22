@@ -1,80 +1,147 @@
-name: macOS test build
+name: macOS desktop preview
 
-# Manually triggered macOS desktop build for testing — produces
-# arm64 and x64 `.dmg` installers and uploads them as workflow
-# artifacts that can be downloaded from the run page. Unlike the
-# tag-triggered `release.yml`, this one does NOT cut a GitHub
-# Release or publish anything; it's a fast iteration path for
-# verifying macOS-specific fixes (perf tuning, signing tweaks,
-# entitlements changes, etc.) on real Apple hardware without
-# going through a versioned release cycle.
-#
-# Run from the Actions tab → "macOS test build" → "Run workflow",
-# or via `gh workflow run mac-test-build.yml`.
-
+# Build the PR merge commit with read-only permissions; no release publishing,
+# signing secrets, or pull_request_target execution of contributor code.
 on:
   workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: macos-desktop-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    if: github.repository == 'dbuldum4/cardmirror-advanced'
-    name: Build mac dmg
-    runs-on: macos-latest
-    timeout-minutes: 30
+  preview:
+    # The repository ID survives renames and excludes the original repository.
+    if: github.event.repository.id == 1400663076
+    name: macOS preview (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Apple Silicon
+            os: macos-latest
+            arch: arm64
+            macho: arm64
+          - label: Intel
+            os: macos-15-intel
+            arch: x64
+            macho: x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET_ARCH: ${{ matrix.arch }}
+      MACHO_ARCH: ${{ matrix.macho }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
         with:
           node-version: '22.23.4'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/desktop/package-lock.json
 
+      - name: Test dependency patch installer
+        run: npm run test:dependency-patches
       - name: Install root dependencies
         run: npm ci
-
       - name: Install desktop dependencies
-        # Mirrors release.yml — apps/desktop intentionally isn't in
-        # the npm workspaces array because electron-builder's internal
-        # install step prunes hoisted dev-deps mid-build. Install
-        # separately.
         run: npm --prefix apps/desktop ci
-
-      - name: Bundle both macOS koffi arch binaries
-        # macos-latest runners are Apple Silicon, so the `ci` above only
-        # installs koffi's arm64 native package (@koromix/koffi-darwin-*
-        # are optional deps gated on `cpu`). electron-builder builds BOTH
-        # the x64 and arm64 dmgs from that install, so without this the x64
-        # dmg ships with no koffi binary and Intel Macs hit "Cannot find the
-        # native Koffi module". Force-install both arch packages at koffi's
-        # own version; --force bypasses the cpu guard, --no-save keeps the
-        # lockfile clean. Mirrors release.yml.
+      - name: Verify native architecture and Koffi
         run: |
-          KOFFI_VER=$(node -p "require('./apps/desktop/node_modules/koffi/package.json').version")
-          npm --prefix apps/desktop install --no-save --force \
-            "@koromix/koffi-darwin-x64@$KOFFI_VER" \
-            "@koromix/koffi-darwin-arm64@$KOFFI_VER"
+          node -e "require('node:assert/strict').equal(process.arch, process.env.TARGET_ARCH); require('./apps/desktop/node_modules/koffi'); console.log('Native architecture and Koffi verified:', process.arch);"
+      - name: Verify fork identity and original license
+        run: npm run check:fork
+      - name: Report actual embedded runtime
+        run: node apps/desktop/scripts/check-electron-runtime.cjs
+      - name: Verify interim Chromium network mitigation
+        run: npm run check:desktop-network
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test desktop behavior
+        run: npm test -- tests/desktop
 
-      - name: Build desktop installer
-        # `dist` runs `electron-builder` with no explicit publish
-        # flag. electron-builder's default in CI is to try to
-        # publish whenever the package.json has a `publish` block
-        # configured — which ours does (for the tag-triggered
-        # release.yml). On workflow_dispatch we don't want to
-        # publish anything; pass `--publish never` to short-
-        # circuit. The trailing `--` flows through the
-        # `npm run` → `dist` → `electron-builder` chain because
-        # the script ends with a bare `electron-builder` call.
-        run: npm --prefix apps/desktop run dist -- --publish never
+      - name: Build renderer
+        run: npm --prefix apps/desktop run build:renderer
+      - name: Build services
+        run: npm --prefix apps/desktop run build:service
+      - name: Build native macOS integration
+        run: npm --prefix apps/desktop run build:native
+      - name: Package macOS DMG and ZIP
+        working-directory: apps/desktop
+        # Explicit architecture overrides the default universal release target.
+        # Ad-hoc signing needs no Apple account or certificate secrets.
+        run: |
+          npx --no-install electron-builder --mac dmg zip "--$TARGET_ARCH" --publish never \
+            '-c.mac.identity=-' \
+            '-c.mac.artifactName=CardMirror-Advanced-Preview-${version}-${arch}.${ext}'
 
-      - name: Upload macOS dmg artifacts
+      - name: Verify packaged app and native architectures
+        run: |
+          shopt -s nullglob
+          apps=(apps/desktop/release/mac*/*.app)
+          [[ ${#apps[@]} -eq 1 ]]
+          APP_PATH="${apps[0]}"
+          export APP_PATH
+          EXECUTABLE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Contents/Info.plist")
+          lipo "$APP_PATH/Contents/MacOS/$EXECUTABLE" -verify_arch "$MACHO_ARCH"
+          lipo "$APP_PATH/Contents/Resources/native/ax-suppress.dylib" -verify_arch arm64 x86_64
+          codesign --verify --deep --strict "$APP_PATH"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const assert = require('node:assert/strict');
+          const resources = path.join(process.env.APP_PATH, 'Contents/Resources');
+          for (const [source, target] of [
+            ['LICENSE', 'LICENSE.cardmirror'],
+            ['THIRD-PARTY-NOTICES.md', 'THIRD-PARTY-NOTICES.md'],
+          ]) {
+            assert.deepEqual(fs.readFileSync(source), fs.readFileSync(path.join(resources, target)));
+          }
+          const asar = require('./apps/desktop/node_modules/@electron/asar');
+          assert.ok(asar.listPackage(path.join(resources, 'app.asar')).includes('/dist/desktop-fetch.js'));
+          assert.ok(fs.existsSync(path.join(resources, 'renderer/index.html')));
+          console.log('Packaged license, notices, renderer, and Chromium transport verified.');
+          NODE
+          ELECTRON_RUN_AS_NODE=1 "$APP_PATH/Contents/MacOS/$EXECUTABLE" <<'NODE'
+          const assert = require('node:assert/strict');
+          const path = require('node:path');
+          const { createRequire } = require('node:module');
+          assert.equal(process.arch, process.env.TARGET_ARCH);
+          assert.ok(process.versions.electron);
+          const load = createRequire(path.resolve(process.env.APP_PATH, 'Contents/Resources/app.asar/package.json'));
+          load('koffi');
+          console.log('Packaged Electron and its native Koffi dependency load successfully.');
+          NODE
+
+      - name: Prepare download licenses and checksums
+        run: |
+          cp LICENSE THIRD-PARTY-NOTICES.md apps/desktop/release/
+          cd apps/desktop/release
+          shasum -a 256 CardMirror-Advanced-Preview-*.dmg CardMirror-Advanced-Preview-*.zip \
+            LICENSE THIRD-PARTY-NOTICES.md > SHA256SUMS
+      - name: Upload macOS preview
         uses: actions/upload-artifact@v4
         with:
-          name: cardmirror-mac-dmg
-          path: apps/desktop/release/*.dmg
+          name: cardmirror-advanced-macos-${{ matrix.arch }}-preview
+          path: |
+            apps/desktop/release/CardMirror-Advanced-Preview-*.dmg
+            apps/desktop/release/CardMirror-Advanced-Preview-*.zip
+            apps/desktop/release/LICENSE
+            apps/desktop/release/THIRD-PARTY-NOTICES.md
+            apps/desktop/release/SHA256SUMS
           if-no-files-found: error
           retention-days: 14

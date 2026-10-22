@@ -92,6 +92,14 @@ See [MIGRATION.md](./MIGRATION.md). Desktop releases and updates target this
 fork, with a separate application ID, executable, and user-data profile.
 There are no installers for this fork until its first verified release.
 
+The **macOS desktop preview** workflow builds automatically for every pull
+request and every push to `main`, and also supports manual runs. In the run's
+Artifacts section, download `cardmirror-advanced-macos-arm64-preview` for Apple
+Silicon or `cardmirror-advanced-macos-x64-preview` for Intel. Each contains a DMG,
+a ZIP of the app, checksums, and the original license/notices. These previews
+are ad-hoc signed and are not notarized; macOS may display a first-open warning.
+No Node.js, Git, or npm setup is needed to use the downloaded app.
+
 For interim desktop use on Windows, the **Windows desktop preview** workflow in
 your fork's Actions tab builds a portable executable. Download the
 `cardmirror-advanced-windows-preview` artifact, extract the ZIP, and run its
