@@ -69,10 +69,11 @@ creating a release or weakening that release gate.
 
 Run typechecking, focused adversarial and legitimate-input regressions, the full
 CI test scope, renderer/desktop builds, both npm audits, and relay tests. CI runs
-real filesystem tests on Linux, macOS, and Windows. Local Linux checks cannot
-establish platform-specific behavior on macOS or Windows. Private Word fixtures,
-live PostgreSQL deployment behavior, provider services, and third-party plugins
-require their own validation.
+real filesystem tests on Linux, macOS, and Windows. CI also runs real PostgreSQL 15 and 18 concurrency/HTTP regressions in isolated
+schemas; controlled tests verify locking, deletion, cleanup and storage limits.
+Local Linux checks cannot establish platform-specific behavior on macOS or
+Windows. Private Word fixtures, production load/deployment behavior, provider
+services, and third-party plugins require their own validation.
 
 A finite review and test suite cannot establish that all bugs or vulnerabilities
 are absent. Keep the known limitations visible and add regression tests for

@@ -61,10 +61,26 @@ work/relay-venv/bin/python -m pip install -r relay/requirements-dev.txt
 work/relay-venv/bin/python -m unittest discover -s relay -p 'test_*.py' -v
 ```
 
-The tests use in-process ASGI requests and a fake database session. They do not
-run application startup, require PostgreSQL or production secrets, or contact
-external services. Pure body-limit tests can also run with only Python's standard
-library: `python3 -m unittest discover -s relay -p 'test_body_limits.py' -v`.
+The default tests use in-process ASGI requests and fake database sessions; live
+PostgreSQL tests skip unless configured. They do not run application startup or
+use production secrets. Pure body-limit tests can also run with only Python's
+standard library: `python3 -m unittest discover -s relay -p 'test_body_limits.py' -v`.
+
+For real transaction/locking tests, point the following variables at a
+**disposable test database** whose user can create and drop schemas:
+
+```sh
+export CARDMIRROR_TEST_POSTGRES_URL='postgresql+psycopg2://USER:PASSWORD@127.0.0.1:5432/TEST_DATABASE'
+export CARDMIRROR_REQUIRE_POSTGRES=1
+work/relay-venv/bin/python -m unittest discover -s relay -p 'test_*.py' -v
+```
+
+Each run creates a random test schema and drops only that schema afterward.
+The URL is separate from deployment `DATABASE_URL`; never use a production
+database for tests. Independent HTTP requests and PostgreSQL transactions cover
+compaction/catch-up locks, deletion and GC races, commit-time response races,
+storage limits, old-counter repair, pagination and SSE cleanup. CI runs all 44
+relay tests against PostgreSQL 15 and 18 and fails if configuration is absent.
 
 ## Notes
 
@@ -72,7 +88,13 @@ library: `python3 -m unittest discover -s relay -p 'test_body_limits.py' -v`.
   sessions authenticate with the same shared bearer.
 - Co-editing rooms: at most **10 people** per session (enforced at
   stream connect), 5 MB per update (the app chunks bigger ones),
-  200 MB stored per room.
+  200 MB stored per room, counting encoded update and snapshot bytes. Old
+  counters are repaired on the first write to a room in each process (and after
+  bounded cache eviction); no schema migration is needed. An existing room over
+  the corrected limit must compact below it before more updates are accepted.
+  Deploy all relay workers together so old workers cannot restore raw-byte
+  accounting. Future snapshot cursors and snapshots exceeding the total room
+  budget are rejected without deleting stored updates.
 - Payload cap 25 MB decompressed / 30 MB gzipped per send.
 - Poll returns at most 100 messages, oldest first; the app deletes
   each message after it lands.

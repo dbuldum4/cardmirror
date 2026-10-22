@@ -107,3 +107,14 @@ until a patched Electron release is pinned. No installer release was published.
 **Repository rename:** Application/package/release configuration is named
 `cardmirror-advanced`. Renaming the GitHub repository slug requires repository
 settings/API access; it is a separate operation from committing the source.
+
+## Live relay concurrency validation
+
+The supplied audit's compaction/catch-up locking fix is now exercised on real
+PostgreSQL 15 and 18, alongside 13 further database/HTTP regressions (44 relay
+tests total). CI runs both PostgreSQL versions on every PR and push to main.
+This pass fixes post-commit upload/mailbox errors, deletion/GC races, premature
+tombstone expiry, invalid future compaction cursors, storage budget accounting
+(including existing databases), and SSE listener leaks before response headers.
+No feature or UI changes were included. These tests use disposable schemas and
+do not constitute production load testing; see [the audit review](AUDIT-REVIEW.md).

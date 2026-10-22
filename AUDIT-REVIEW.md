@@ -12,7 +12,8 @@ not independently adopted. Security findings 1–6 were triaged statically befor
 implementation: none required an additional fork security patch, because the
 reported paths were already addressed. Item 6 remains partly open upstream;
 items 3–4 have stronger defenses in the fork. Correctness review found remaining
-gaps in items 9, 14, 15, 20 and 28, patched here.
+gaps in items 9, 14, 15, 20 and 28, patched here. A subsequent live PostgreSQL
+pass verified item 24 and exposed additional relay defects, also fixed here.
 
 | # | Finding | Current original upstream | Fork after review; evidence |
 | --- | --- | --- | --- |
@@ -39,7 +40,7 @@ gaps in items 9, 14, 15, 20 and 28, patched here.
 | 21 | Continuous edits postpone autosave/journal indefinitely | Addressed | Already addressed: pending-since timestamps force scheduling after 30 seconds in single/multiple panes. Event-loop stalls and slow writes can still delay completion. |
 | 22 | AI body stalls after headers bypass timeout | Addressed | Already addressed: body is read under the request timer; added stalled-body regression alongside existing hung-connection test. |
 | 23 | Highlight override styles leak across panes | Addressed | Already addressed: each view owns a scoped stylesheet and removes only its own on destroy. |
-| 24 | Relay compaction and catch-up transaction races | Row locks added for compaction and catch-up | Source-level addressed: fork also locks appends for room capacity/compaction accounting. Snapshot writers use exclusive room lock and readers use shared lock. SQLite tests cannot validate PostgreSQL concurrency; no live PostgreSQL race proof is claimed. |
+| 24 | Relay compaction and catch-up transaction races | Row locks added for compaction and catch-up | Verified with real PostgreSQL 15 and 18: concurrent compactions cannot roll back a newer snapshot, and catch-up snapshot/tail reads stay consistent. Fork also serializes appends/deletion/GC and fixes the related races listed below; `relay/test_postgres.py`. |
 | 25 | Subscript/zoom shortcut collision | Addressed by unbinding subscript and updating manual | Already addressed: Mod-= remains Zoom In; subscript available through Format and user-configurable shortcuts. |
 | 26 | Bulk conversion overwrites existing destination files | Addressed | Already addressed: all loose/ZIP output writes request `failIfExists`, collisions are reported/skipped. |
 | 27 | Replace All cap silently replaces only some matches | Addressed | Already addressed: `find-replace-ui.ts` reports capped pass and remaining matches, inviting another pass. |
@@ -52,8 +53,8 @@ inertness, native-to-DOCX conversion, content controls, AI header/body timeouts,
 Quick Cards concurrent mutations/migration, document write failures/durability,
 and layout-switch failures/timeouts/late replies. Validation passed: root and desktop typechecking, renderer/service and Lite
 builds, Lite boundary verification, fork/license checks, documentation links,
-and workflow linting. The local CI-scope run passed 4,167 tests, with 38
-fixture-dependent tests skipped across 10 suites. Final focused runs also
+and workflow linting. The local CI-scope run passed 4,176 tests, with 38
+platform/fixture-dependent tests skipped across 10 suites. Final focused runs also
 covered later review refinements (28 mode-switch tests, 19 Quick Cards/matcher
 tests, 37 browser/AI tests, and 48 disk-write tests). Windows CI exposed a
 directory-parent walk that compared names literally; a follow-up normalizes
@@ -61,6 +62,24 @@ Windows path identity (including the extended paths returned by Node on the
 Windows runner) and bounds the walk at the root. Regressions cover drive
 casing, separators, normal/extended drive and UNC paths, equivalent mkdir
 results and invalid ancestry.
+
+Live relay validation now passes **44 tests on PostgreSQL 15 and 18** (29
+existing unit/HTTP tests and 15 real-database regressions). Tests own a random
+schema, use independent transactions, and verify actual blocking with
+`pg_blocking_pids`, including first/existing snapshot compaction and catch-up.
+Dedicated CI jobs require the database configuration instead of silently
+skipping. This is controlled concurrency validation, not a production load test.
+
+The live pass also reproduced and fixed successful uploads returning errors
+when compaction deletes the row immediately after commit, mailbox sends failing
+when the recipient immediately deletes a delivered message, room deletion
+leaving updates behind an in-flight append, cleanup racing active rooms and
+expiring tombstones early, future snapshot cursors dropping data, inconsistent
+stored-byte accounting and missing snapshot-plus-tail limits, and SSE listener
+reservations surviving a disconnect before response headers. Existing databases
+repair old counters lazily under the room lock, without a schema migration.
+These additional defects are still present in the read-only upstream revision
+listed above; its locks already address the originally reported item 24.
 
 The macOS preview workflow builds **only Apple Silicon** on every PR and push
 to main. Linux, Windows and Intel Mac tests remain in ordinary CI. Preview

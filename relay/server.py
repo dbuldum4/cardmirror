@@ -90,9 +90,10 @@ import re
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator, Callable, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -265,6 +266,9 @@ def _sweep(db: Session) -> int:
     idle = (
         db.query(RelayRoom)
         .filter(RelayRoom.last_activity < idle_cutoff)
+        # Writers and catch-up readers own the same room lock. Busy rooms
+        # are active work, not candidates for idle cleanup this round.
+        .with_for_update(skip_locked=True)
         .all()
     )
     for room in idle:
@@ -279,6 +283,8 @@ def _sweep(db: Session) -> int:
         else:
             room.tombstoned = True
             room.bytes_used = 0
+            # Retain the 410 tombstone for a full second idle period.
+            room.last_activity = datetime.utcnow()
     db.commit()
     return removed
 
@@ -526,7 +532,8 @@ def post_message(
     _validate_recipient_code(recipient)
 
     msg_id = uuid.uuid4().hex
-    row = RelayMessage(id=msg_id, recipient_code=recipient, body=payload)
+    created_at = datetime.utcnow()
+    row = RelayMessage(id=msg_id, recipient_code=recipient, body=payload, created_at=created_at)
     db.add(row)
     db.commit()
     logger.info("[relay] POST recipient=%s… msgId=%s", recipient[:8], msg_id[:8])
@@ -535,7 +542,7 @@ def post_message(
     # loop-owned and NOT thread-safe, so the fan-out is scheduled onto
     # the loop rather than touched here.
     if _loop is not None:
-        message = {**payload, "msgId": msg_id, "receivedAt": _epoch_ms(row.created_at)}
+        message = {**payload, "msgId": msg_id, "receivedAt": _epoch_ms(created_at)}
         _loop.call_soon_threadsafe(_push_to_streams, recipient, message)
     return JSONResponse({"msgId": msg_id}, status_code=202)
 
@@ -582,6 +589,22 @@ def get_messages(
     return maybe_gzip_json(request, {"messages": messages})
 
 
+class ListenerStreamingResponse(StreamingResponse):
+    """Release a reserved listener even if sending headers fails before iteration."""
+
+    def __init__(self, content: AsyncIterator[str], on_close: Callable[[], None]):
+        super().__init__(content, media_type="text/event-stream", headers={
+            "Cache-Control": "no-cache", "X-Accel-Buffering": "no",
+        })
+        self.on_close = on_close
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self.on_close()
+
+
 @app.get("/relay/stream", dependencies=[Depends(require_relay_token)])
 async def stream_messages(
     request: Request,
@@ -591,6 +614,13 @@ async def stream_messages(
     newly POSTed bundle, heartbeat comments while idle."""
     queue: "asyncio.Queue[dict]" = asyncio.Queue(maxsize=STREAM_QUEUE_MAX)
     _streams.setdefault(recipient, set()).add(queue)
+
+    def cleanup() -> None:
+        peers = _streams.get(recipient)
+        if peers is not None:
+            peers.discard(queue)
+            if not peers:
+                _streams.pop(recipient, None)
 
     async def gen() -> AsyncIterator[str]:
         try:
@@ -606,17 +636,9 @@ async def stream_messages(
                 except asyncio.TimeoutError:
                     yield ": hb\n\n"
         finally:
-            peers = _streams.get(recipient)
-            if peers is not None:
-                peers.discard(queue)
-                if not peers:
-                    _streams.pop(recipient, None)
+            cleanup()
 
-    return StreamingResponse(
-        gen(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return ListenerStreamingResponse(gen(), cleanup)
 
 
 @app.delete(
@@ -651,6 +673,37 @@ def _room_or_error(db: Session, room_id: str, *, for_update: bool = False, for_s
     if room.tombstoned:
         raise HTTPException(410, "session ended")
     return room
+
+
+# Existing deployments counted some updates as raw bytes and snapshots as base64.
+# Repair each room lazily under its writer lock. The bounded process cache avoids
+# scanning a growing update log on every append; evictions simply recheck safely.
+_accounted_rooms: OrderedDict[str, None] = OrderedDict()
+_accounting_guard = threading.Lock()
+
+
+def _repair_room_accounting(db: Session, room: RelayRoom) -> None:
+    with _accounting_guard:
+        if room.id in _accounted_rooms:
+            _accounted_rooms.move_to_end(room.id)
+            return
+    from sqlalchemy import func
+    updates = db.query(func.coalesce(func.sum(func.octet_length(RelayRoomUpdate.blob)), 0)).filter(
+        RelayRoomUpdate.room_id == room.id,
+    ).scalar()
+    snapshot = db.query(func.octet_length(RelayRoomSnapshot.blob)).filter(
+        RelayRoomSnapshot.room_id == room.id,
+    ).scalar()
+    room.bytes_used = int(updates) + int(snapshot or 0)
+
+
+def _note_room_accounted(room_id: str) -> None:
+    # Only mark committed counters; a refused/rolled-back write must retry repair.
+    with _accounting_guard:
+        _accounted_rooms[room_id] = None
+        _accounted_rooms.move_to_end(room_id)
+        if len(_accounted_rooms) > 4096:
+            _accounted_rooms.popitem(last=False)
 
 
 def _room_last_seq(db: Session, room_id: str) -> int:
@@ -692,15 +745,22 @@ def post_room_update(
         raise HTTPException(413, "update too large")
     # Serialize capacity accounting with other appends and compactions.
     room = _room_or_error(db, room_id, for_update=True)
-    if room.bytes_used + len(raw) > ROOM_CAP_BYTES:
-        raise HTTPException(413, "room storage cap reached")
+    _repair_room_accounting(db, room)
     b64 = base64.b64encode(raw).decode("ascii")
+    # Count stored base64 bytes, matching the snapshot/retained-tail budget.
+    if room.bytes_used + len(b64) > ROOM_CAP_BYTES:
+        raise HTTPException(413, "room storage cap reached")
     row = RelayRoomUpdate(room_id=room_id, blob=b64)
     db.add(row)
-    room.bytes_used = room.bytes_used + len(raw)
+    room.bytes_used = room.bytes_used + len(b64)
     room.last_activity = datetime.utcnow()
-    db.commit()
+    # Capture the generated cursor while the room lock still protects the row.
+    # A compactor can delete it immediately after commit; expire-on-commit ORM
+    # refresh would then turn this successfully stored update into a 500.
+    db.flush()
     seq = int(row.id)
+    db.commit()
+    _note_room_accounted(room_id)
     if _loop is not None:
         _loop.call_soon_threadsafe(_push_to_room, room_id, {"t": "u", "seq": seq, "blob": b64})
     return JSONResponse({"seq": seq}, status_code=202)
@@ -761,12 +821,13 @@ def post_room_snapshot(
     try:
         payload = json.loads(raw)
         blob = payload["blob"]
-        covers = int(payload["coversThroughSeq"])
-        if not isinstance(blob, str) or not blob or covers < 0:
+        covers = payload["coversThroughSeq"]
+        if (not isinstance(blob, str) or not blob or type(covers) is not int or covers < 0):
             raise ValueError
+        blob_bytes = len(blob.encode("utf-8"))
     except Exception:
         raise HTTPException(400, "expected {blob, coversThroughSeq}")
-    if len(blob) > MAX_SNAPSHOT_BLOB_BYTES:
+    if blob_bytes > MAX_SNAPSHOT_BLOB_BYTES:
         raise HTTPException(413, "snapshot too large")
     # Row lock: two overlapping compactions (a slow uplink can let the host
     # start the next before the last lands) otherwise race read-then-write,
@@ -781,6 +842,19 @@ def post_room_snapshot(
     if existing_covers is not None and covers <= existing_covers:
         # Stale or duplicate compaction (another client got there first).
         return Response(status_code=204)
+    if covers > _room_last_seq(db, room_id):
+        raise HTTPException(409, "snapshot covers updates not committed to this room")
+    # Budget the replacement BEFORE deleting any updates. All room writers
+    # hold the room lock, so the retained tail stays stable through commit.
+    from sqlalchemy import func
+    remaining = (
+        db.query(func.coalesce(func.sum(func.octet_length(RelayRoomUpdate.blob)), 0))
+        .filter(RelayRoomUpdate.room_id == room_id, RelayRoomUpdate.id > covers)
+        .scalar()
+    )
+    stored_bytes = int(remaining) + blob_bytes
+    if stored_bytes > ROOM_CAP_BYTES:
+        raise HTTPException(413, "room storage cap reached")
     if existing_covers is None:
         db.add(RelayRoomSnapshot(room_id=room_id, blob=blob, covers_through_seq=covers))
     else:
@@ -794,18 +868,10 @@ def post_room_snapshot(
     db.query(RelayRoomUpdate).filter(
         RelayRoomUpdate.room_id == room_id, RelayRoomUpdate.id <= covers
     ).delete(synchronize_session=False)
-    # Recompute stored size from what actually remains (base64 length is a
-    # fine proxy for the cap's purpose).
-    from sqlalchemy import func
-
-    remaining = (
-        db.query(func.coalesce(func.sum(func.length(RelayRoomUpdate.blob)), 0))
-        .filter(RelayRoomUpdate.room_id == room_id)
-        .scalar()
-    )
-    room.bytes_used = int(remaining) + len(blob)
+    room.bytes_used = stored_bytes
     room.last_activity = datetime.utcnow()
     db.commit()
+    _note_room_accounted(room_id)
     return Response(status_code=204)
 
 
@@ -855,6 +921,13 @@ async def stream_room(
     queue: "asyncio.Queue[dict]" = asyncio.Queue(maxsize=STREAM_QUEUE_MAX)
     _room_streams.setdefault(room_id, {})[queue] = sid
 
+    def cleanup() -> None:
+        peers = _room_streams.get(room_id)
+        if peers is not None:
+            peers.pop(queue, None)
+            if not peers:
+                _room_streams.pop(room_id, None)
+
     async def gen() -> AsyncIterator[str]:
         try:
             yield f'event: hello\ndata: {{"lastSeq":{last_seq}}}\n\n'
@@ -869,17 +942,9 @@ async def stream_room(
                 except asyncio.TimeoutError:
                     yield ": hb\n\n"
         finally:
-            peers = _room_streams.get(room_id)
-            if peers is not None:
-                peers.pop(queue, None)
-                if not peers:
-                    _room_streams.pop(room_id, None)
+            cleanup()
 
-    return StreamingResponse(
-        gen(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return ListenerStreamingResponse(gen(), cleanup)
 
 
 @app.delete(
@@ -888,7 +953,9 @@ async def stream_room(
     dependencies=[Depends(require_relay_token)],
 )
 def delete_room(room_id: str, db: Session = Depends(get_db)) -> Response:
-    room = db.get(RelayRoom, room_id)
+    # Take the room lock BEFORE removing children. Otherwise an in-flight
+    # append can commit between deletion and tombstoning, leaving orphan data.
+    room = db.query(RelayRoom).filter(RelayRoom.id == room_id).with_for_update().one_or_none()
     if room is None:
         raise HTTPException(404, "no such room")
     if not room.tombstoned:

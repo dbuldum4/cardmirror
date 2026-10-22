@@ -118,3 +118,40 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=6144
         # An empty test-scope (Linux/Apple Silicon) runs the full suite.
         run: npm test -- ${{ matrix.test-scope }}
+
+  relay-postgres:
+    name: Relay concurrency (PostgreSQL ${{ matrix.postgres }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['15', '18']
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}-alpine
+        env:
+          POSTGRES_DB: cardmirror_test
+          POSTGRES_USER: cardmirror_test
+          POSTGRES_PASSWORD: cardmirror_test
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd="pg_isready -U cardmirror_test -d cardmirror_test"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'relay/requirements*.txt'
+      - name: Install relay test dependencies
+        run: python -m pip install -r relay/requirements-dev.txt
+      - name: Real PostgreSQL concurrency and HTTP regressions
+        env:
+          CARDMIRROR_REQUIRE_POSTGRES: '1'
+          CARDMIRROR_TEST_POSTGRES_URL: postgresql+psycopg2://cardmirror_test:cardmirror_test@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/cardmirror_test
+        run: python -m unittest discover -s relay -p 'test_*.py' -v
