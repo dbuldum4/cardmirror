@@ -2,18 +2,6 @@ name: Windows desktop preview
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.gitattributes'
-      - '.github/workflows/windows-preview.yml'
-      - 'apps/desktop/**'
-      - 'src/**'
-      - 'public/**'
-      - 'scripts/**'
-      - 'tests/desktop/**'
-      - 'package*.json'
-      - 'vite.config.ts'
 
 permissions:
   contents: read

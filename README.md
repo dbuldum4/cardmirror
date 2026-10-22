@@ -96,13 +96,13 @@ The **macOS desktop preview** workflow builds automatically for every pull
 request and every push to `main`, and also supports manual runs. In the run's
 Artifacts section, download `cardmirror-advanced-macos-arm64-preview` for Apple
 Silicon. It contains a DMG, a ZIP of the app, checksums, and the original
-license/notices. CI still tests Intel Macs, Linux, and Windows; only the macOS
-preview packaging is restricted to Apple Silicon. These previews
+license/notices. CI still tests Intel Macs, Linux, and Windows; automatic preview
+packaging is restricted to Apple Silicon. These previews
 are ad-hoc signed and are not notarized; macOS may display a first-open warning.
 No Node.js, Git, or npm setup is needed to use the downloaded app.
 
-For interim desktop use on Windows, the **Windows desktop preview** workflow in
-your fork's Actions tab builds a portable executable. Download the
+For interim desktop use on Windows, manually run the **Windows desktop preview**
+workflow in your fork's Actions tab to build a portable executable. Download the
 `cardmirror-advanced-windows-preview` artifact, extract the ZIP, and run its
 `.exe`; no Node.js, Git, or npm setup is needed on that computer. It is an
 unsigned preview, so Windows may show a publisher warning. It preserves the
