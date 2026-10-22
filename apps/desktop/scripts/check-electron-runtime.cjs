@@ -17,16 +17,17 @@ if (!process.versions.electron) {
   if (pkg.build?.electronVersion) {
     assert.equal(process.versions.electron, pkg.build.electronVersion);
   }
-  // A Brotli round-trip is only a smoke test: it passes on runtimes that are still
-  // exposed to CVE-2026-111497. Exposure is decided by the embedded Node version,
-  // which Node fixed in 22.23.4, 24.22.1 and 26.12.1 on 2026-10-21.
+  // This is a conservative full-Node-update gate, not a per-CVE exposure test.
+  // Electron 45 uses Chromium 156's already-fixed Brotli implementation even
+  // though its Node version predates the security release. Application HTTP
+  // now uses Chromium too; the embedded Node TLS API remains affected below.
   const patchedNode = { 22: [23, 4], 24: [22, 1], 26: [12, 1] };
   const [major, minor, patch] = process.versions.node.split('.').map(Number);
   const floor = patchedNode[major];
   const nodeHasOctoberFixes = Boolean(floor) && (minor > floor[0] || (minor === floor[0] && patch >= floor[1]));
   if (!nodeHasOctoberFixes) {
     // Development checks disclose exposure; publishing must use the strict gate.
-    console.log(`::warning::Electron ${process.versions.electron} embeds Node ${process.versions.node}, which predates the 2026-10-21 Node security release (Brotli CVE-2026-111497, TLS hostname checks). Upgrade Electron once a release embeds Node 24.22.1 or later.`);
+    console.log(`::warning::Electron ${process.versions.electron} embeds Node ${process.versions.node}, which predates the 2026-10-21 Node security release (application HTTP mitigated via Chromium; embedded Node APIs remain unpatched). Upgrade Electron once a release embeds Node 24.22.1 or later.`);
   }
   if (process.argv.includes('--require-patched-node')) {
     assert.ok(nodeHasOctoberFixes, 'Publishing blocked: Electron embeds a Node version missing the October 2026 security fixes.');
@@ -40,12 +41,17 @@ if (!process.versions.electron) {
   assert.equal(tls.checkServerIdentity('expected.test', cert), undefined);
   assert.equal(tls.checkServerIdentity('127.0.0.1', cert), undefined);
   assert.ok(tls.checkServerIdentity('other.test', cert) instanceof Error);
+  const numericCert = { subjectaltname: 'DNS:127.0.0.1, DNS:87.0.0.1' };
+  const tlsRejectsNonCanonicalIPs = ['１２７.0.0.1', '127.1', '0127.0.0.1'].every(
+    (host) => tls.checkServerIdentity(host, numericCert) instanceof Error,
+  );
   console.log(JSON.stringify({
     electron: process.versions.electron,
     node: process.versions.node,
     chrome: process.versions.chrome,
     nodeHasOctoberFixes,
+    tlsRejectsNonCanonicalIPs,
     brotli: 'smoke test passed (does not detect CVE-2026-111497)',
-    tls: 'basic DNS/IP identity checks passed (does not detect the October bypasses)',
+    tls: 'basic controls passed; non-canonical IP bypass cases measured separately above',
   }));
 }

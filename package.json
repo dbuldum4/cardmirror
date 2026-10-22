@@ -37,7 +37,8 @@
     "verify:lite": "node scripts/verify-lite-bundle.mjs",
     "check:document": "tsx bin/check-document.ts",
     "audit:dependencies": "npm audit && npm --prefix apps/desktop audit",
-    "check:fork": "node scripts/check-fork-boundaries.mjs"
+    "check:fork": "node scripts/check-fork-boundaries.mjs",
+    "check:desktop-network": "node scripts/check-desktop-network.mjs && npm --prefix apps/desktop run build:main && node apps/desktop/scripts/check-desktop-network.cjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.2",

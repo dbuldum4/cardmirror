@@ -80,10 +80,19 @@ fixtures are absent. There was no real macOS/Windows installer test, GUI launch,
 live PostgreSQL load test, hosted-service deployment, or arbitrary third-party
 plugin validation. Finite tests do not establish that all defects are absent.
 
-**Known runtime issue:** Electron 45.0.0 embeds Node 24.22.0 and still lacks the
-October 2026 Node security fixes. This was measured directly; passing package
-audits do not fix it. Strict runtime checks block publishing until a patched
-Electron release is pinned. No installer release was published.
+**Interim desktop mitigation:** Electron 45.0.0 embeds Node 24.22.0, whose direct
+TLS hostname API still reproduces the October bypass examples. Application-owned
+HTTP now uses isolated Chromium networking instead, preserving streaming,
+downloads, cancellation, explicit authentication, and local integrations.
+Cross-origin redirects strip credentials. The updater already uses Chromium.
+The real Electron integration probe poisons Node fetch to catch fallbacks and
+checks cookies, cache/ETags, redirects, gzip/Brotli, streams, aborts, and invalid
+certificates. A Windows workflow supplies a portable preview artifact.
+
+The earlier Brotli exposure claim based only on Node's version was too broad:
+Electron links Chromium's already-fixed Brotli library. The complete embedded
+Node update is still pending, and strict release checks still block publishing
+until a patched Electron release is pinned. No installer release was published.
 
 **Repository rename:** Application/package/release configuration is named
 `cardmirror-advanced`. Renaming the GitHub repository slug requires repository

@@ -5,6 +5,8 @@
  * userData/plugins/<id>/ — one directory per plugin, next to the
  * legacy cardcutter.global.js FILE, which listInstalled skips.
  */
+import { desktopFetch as fetch } from './desktop-fetch.js';
+
 import { readResponseTextBounded } from './bounded-response.js';
 import { app } from 'electron';
 import { promises as fs } from 'node:fs';

@@ -56,6 +56,12 @@ jobs:
       - name: Verify actual pinned Electron runtime
         run: node apps/desktop/scripts/check-electron-runtime.cjs
 
+      - name: Verify desktop Chromium networking
+        env:
+          # Only the headless test subprocess uses this container workaround.
+          CARDMIRROR_TEST_NO_SANDBOX: ${{ matrix.os == 'ubuntu-latest' && '1' || '' }}
+        run: npm run check:desktop-network
+
       - name: Verify fork identity and license
         run: npm run check:fork
 

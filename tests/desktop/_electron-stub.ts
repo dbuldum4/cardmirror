@@ -74,6 +74,7 @@ export function resetElectronStub(userDataPath: string): void {
 const appEventListeners = new Map<string, Array<(evt: unknown, ...args: any[]) => void>>();
 
 export const app = {
+  whenReady: () => Promise.resolve(),
   __userData: '/tmp',
   getPath: (name: string) => {
     if (name === 'userData') return (app as any).__userData as string;
@@ -85,6 +86,15 @@ export const app = {
     arr.push(listener);
     appEventListeners.set(event, arr);
   },
+};
+
+// The Node test runner cannot host Chromium. Existing real-HTTP and mocked
+// fetch tests retain their transport; the actual Electron probe tests Chromium.
+export const session = {
+  fromPartition: () => ({
+    fetch: (input: string, init?: RequestInit) => globalThis.fetch(input, init),
+    webRequest: { onBeforeSendHeaders: () => {}, onBeforeRequest: () => {} },
+  }),
 };
 
 /** Fire an app-level event (e.g. 'browser-window-focus') into every

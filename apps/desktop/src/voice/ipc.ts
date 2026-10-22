@@ -10,6 +10,8 @@
  * for the many users who never enable voice. The runtime itself
  * (sherpa-onnx-node, a N-API addon) ships in the app.
  */
+import { desktopFetch as fetch } from '../desktop-fetch.js';
+
 import { app, ipcMain, systemPreferences } from 'electron';
 import { LITE_BUILD } from '../lite-build.js';
 import { fork, type ChildProcess } from 'node:child_process';

@@ -3,7 +3,7 @@
  * channel (`GET /relay/stream?recipient=`), with reconnection.
  *
  * Transport only: parses `text/event-stream` frames off a streamed
- * fetch (undici — zero dependencies) and hands the payloads to the
+ * Chromium fetch and hands the payloads to the
  * caller. The pairing bridge owns what the messages mean.
  *
  * Contract with the server (see the relay's stream_messages):
@@ -24,6 +24,8 @@
  *     max backoff. (Today that's a token mismatch; when subscription
  *     gating lands this is the "connect your blog account" signal.)
  */
+
+import { desktopFetch as fetch } from './desktop-fetch.js';
 
 export interface RelayStreamCallbacks {
   /** Connection established (hello frame received). */
@@ -155,7 +157,7 @@ export class RelayStream {
       };
 
       const decoder = new TextDecoder();
-      // Node's undici ReadableStream is async-iterable at runtime; the
+      // Chromium fetch's ReadableStream is async-iterable at runtime; the
       // DOM lib typings just don't know it.
       for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
         buf += decoder.decode(chunk, { stream: true });

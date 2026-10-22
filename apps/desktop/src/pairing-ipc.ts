@@ -33,6 +33,8 @@
  * so pointing at production is a one-line change to DEFAULT_RELAY_URL.
  */
 
+import { desktopFetch as fetch } from './desktop-fetch.js';
+
 import { app, BrowserWindow, ipcMain, powerMonitor } from 'electron';
 import { gzipSync } from 'node:zlib';
 import * as os from 'node:os';

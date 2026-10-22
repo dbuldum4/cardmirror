@@ -92,10 +92,20 @@ See [MIGRATION.md](./MIGRATION.md). Desktop releases and updates target this
 fork, with a separate application ID, executable, and user-data profile.
 There are no installers for this fork until its first verified release.
 
+For interim desktop use on Windows, the **Windows desktop preview** workflow in
+your fork's Actions tab builds a portable executable. Download the
+`cardmirror-advanced-windows-preview` artifact, extract the ZIP, and run its
+`.exe`; no Node.js, Git, or npm setup is needed on that computer. It is an
+unsigned preview, so Windows may show a publisher warning. It preserves the
+editor UI and routes desktop HTTP through Chromium while the full embedded Node
+update is pending. This is a test artifact, not a verified installer release.
+
 **Desktop release gate:** Electron 45.0.0 currently embeds Node 24.22.0, below
 the October 2026 Node security fixes. Development checks report this honestly;
 release commands and workflows refuse to publish until a patched Electron
 runtime is pinned. See [SECURITY.md](./SECURITY.md).
+The preview mitigation avoids Node's HTTP client stack without claiming to
+patch every embedded Node API.
 
 ## Collaboration and optional services
 

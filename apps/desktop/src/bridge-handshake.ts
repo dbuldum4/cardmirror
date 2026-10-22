@@ -25,6 +25,8 @@
  * "flow". All cross-app transport is brokered HERE — renderer plugins
  * never see tokens or sockets.
  */
+import { desktopFetch as fetch } from './desktop-fetch.js';
+
 import { app } from 'electron';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
