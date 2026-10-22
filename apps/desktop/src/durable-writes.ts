@@ -32,19 +32,22 @@ export async function syncDirectory(dir: string): Promise<void> {
 }
 
 /** Build the finite parent walk before doing I/O. mkdir may return an
- * equivalent path with different separators or drive-letter casing.
+ * equivalent path with different separators, drive casing, or namespace form.
  */
 export function directoryParentsToSync(
   dir: string,
   firstCreated: string,
-  pathApi: Pick<typeof path, 'resolve' | 'dirname' | 'relative'> = path,
+  pathApi: Pick<typeof path, 'resolve' | 'dirname' | 'relative' | 'toNamespacedPath'> = path,
 ): string[] {
   const first = pathApi.resolve(firstCreated);
+  const firstIdentity = pathApi.toNamespacedPath(first);
   const parents: string[] = [];
   for (let current = pathApi.resolve(dir); ; ) {
     const parent = pathApi.dirname(current);
     parents.push(parent);
-    if (pathApi.relative(first, current) === '') return parents;
+    // Windows may report mkdir's result using an extended drive/UNC path.
+    // Normalize identity only; keep the original parent paths for filesystem I/O.
+    if (pathApi.relative(firstIdentity, pathApi.toNamespacedPath(current)) === '') return parents;
     // Fail instead of repeatedly syncing the root if mkdir ever returns
     // a path outside this ancestry (including another Windows volume).
     if (pathApi.relative(current, parent) === '') {

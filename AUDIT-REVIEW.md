@@ -55,10 +55,12 @@ builds, Lite boundary verification, fork/license checks, documentation links,
 and workflow linting. The local CI-scope run passed 4,167 tests, with 38
 fixture-dependent tests skipped across 10 suites. Final focused runs also
 covered later review refinements (28 mode-switch tests, 19 Quick Cards/matcher
-tests, 37 browser/AI tests, and 42 disk-write tests). Windows CI exposed a
+tests, 37 browser/AI tests, and 48 disk-write tests). Windows CI exposed a
 directory-parent walk that compared names literally; a follow-up normalizes
-Windows path identity and bounds the walk at the root. Regressions cover drive
-casing, separators, equivalent mkdir results and invalid ancestry.
+Windows path identity (including the extended paths returned by Node on the
+Windows runner) and bounds the walk at the root. Regressions cover drive
+casing, separators, normal/extended drive and UNC paths, equivalent mkdir
+results and invalid ancestry.
 
 The macOS preview workflow builds **only Apple Silicon** on every PR and push
 to main. Linux, Windows and Intel Mac tests remain in ordinary CI. Preview

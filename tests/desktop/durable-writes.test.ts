@@ -176,6 +176,18 @@ describe('durable replacements (document and recovery-journal disk layer)', () =
   it.each([
     ['C:\\work\\new\\deeper', '\\\\?\\C:\\work\\new'],
     ['\\\\server\\share\\new\\deeper', '\\\\?\\UNC\\server\\share\\new'],
+    ['\\\\?\\C:\\work\\new\\deeper', 'C:\\work\\new'],
+    ['\\\\?\\UNC\\server\\share\\new\\deeper', '\\\\server\\share\\new'],
+  ])('matches normal and extended Windows paths without changing parent spelling: %s', (destination, firstCreated) => {
+    expect(directoryParentsToSync(destination, firstCreated, path.win32)).toEqual([
+      path.win32.dirname(destination),
+      path.win32.dirname(path.win32.dirname(destination)),
+    ]);
+  });
+
+  it.each([
+    ['C:\\work\\new\\deeper', '\\\\?\\D:\\work\\new'],
+    ['\\\\server\\share\\new\\deeper', '\\\\?\\UNC\\server\\another-share\\new'],
   ])('diagnoses unmatched Windows path forms without losing escaped values: %s', (destination, firstCreated) => {
     let message = '';
     try { directoryParentsToSync(destination, firstCreated, path.win32); }
@@ -188,13 +200,6 @@ describe('durable replacements (document and recovery-journal disk layer)', () =
       resolvedFirstCreated: path.win32.resolve(firstCreated),
       stoppedAt: path.win32.parse(destination).root,
     });
-    // Node recognizes their identity after both forms use its native
-    // namespace conversion. CI diagnostics must establish whether this
-    // is the actual mkdir mismatch before changing production behavior.
-    expect(path.win32.relative(
-      path.win32.toNamespacedPath(path.win32.resolve(firstCreated)),
-      path.win32.toNamespacedPath(path.win32.dirname(destination)),
-    )).toBe('');
   });
 
   it('does not silently ignore ordinary directory I/O errors', async () => {
